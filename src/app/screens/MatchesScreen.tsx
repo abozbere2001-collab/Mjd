@@ -332,21 +332,8 @@ export function MatchesScreen({ navigate, goBack, canGoBack, isVisible, favorite
             if (abortSignal.aborted) return;
             
             const allFixturesToday: FixtureType[] = data.response || [];
-            const favTeamIds = Object.keys(currentFavorites?.teams || {}).map(Number);
-            const favLeagueIds = Object.keys(currentFavorites?.leagues || {}).map(Number);
             
-            let filteredFixtures: FixtureType[];
-            if (favTeamIds.length === 0 && favLeagueIds.length === 0) {
-                filteredFixtures = allFixturesToday.filter(f => popularLeagueIds.has(f.league.id));
-            } else {
-                filteredFixtures = allFixturesToday.filter(f => 
-                    favTeamIds.includes(f.teams.home.id) || 
-                    favTeamIds.includes(f.teams.away.id) ||
-                    favLeagueIds.includes(f.league.id)
-                );
-            }
-
-            const processedFixtures = filteredFixtures.map(fixture => ({
+            const processedFixtures = allFixturesToday.map(fixture => ({
                 ...fixture,
                 league: { ...fixture.league, name: getDisplayName('league', fixture.league.id, fixture.league.name) },
                 teams: {
@@ -441,7 +428,19 @@ export function MatchesScreen({ navigate, goBack, canGoBack, isVisible, favorite
   const favoritedLeagueIds = useMemo(() => favorites?.leagues ? Object.keys(favorites.leagues).map(Number) : [], [favorites]);
   const hasAnyFavorites = favoritedLeagueIds.length > 0 || favoritedTeamIds.length > 0;
   
-  const currentFixtures = matchesCache.get(selectedDateKey) || [];
+  const allFixturesForDay = matchesCache.get(selectedDateKey) || [];
+
+  const currentFixtures = useMemo(() => {
+      if (!hasAnyFavorites) {
+          return allFixturesForDay.filter(f => popularLeagueIds.has(f.league.id));
+      }
+      return allFixturesForDay.filter(f =>
+          favoritedTeamIds.includes(f.teams.home.id) ||
+          favoritedTeamIds.includes(f.teams.away.id) ||
+          favoritedLeagueIds.includes(f.league.id)
+      );
+  }, [allFixturesForDay, hasAnyFavorites, favoritedTeamIds, favoritedLeagueIds]);
+
     
   return (
     <div className="flex h-full flex-col bg-background">

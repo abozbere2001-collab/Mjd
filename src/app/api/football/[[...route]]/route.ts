@@ -10,7 +10,12 @@ export async function GET(
 ) {
   const { searchParams } = new URL(request.url);
   const route = params.route || [];
-  const routePath = Array.isArray(route) ? route.join('/') : '';
+  let routePath = Array.isArray(route) ? route.join('/') : '';
+  
+  // Correction for API path, e.g. /fixtures/lineups -> /lineups
+  if (routePath.startsWith('fixtures/')) {
+    routePath = routePath.replace('fixtures/', '');
+  }
   
   const apiURL = `https://${API_FOOTBALL_HOST}/${routePath}?${searchParams.toString()}`;
 
