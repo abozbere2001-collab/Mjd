@@ -196,59 +196,50 @@ const DateScroller = ({ selectedDateKey, onDateSelect }: {selectedDateKey: strin
         }
     }, [selectedDateKey]);
     
-    const selectedDayLabel = getDayLabel(new Date(selectedDateKey));
-
     return (
-        <div className="relative bg-card py-2 border-x border-b rounded-b-lg shadow-md flex flex-col">
-            <div className="font-bold text-center text-sm text-primary mb-1 h-5">
-                {selectedDayLabel}
-            </div>
-            <div className="flex items-center justify-center">
-                <Button 
-                    variant="ghost" 
-                    size="icon"
-                    className="h-8 w-8 z-10"
-                    onClick={() => onDateSelect(formatDateKey(subDays(new Date(selectedDateKey), 1)))}
-                >
-                    <ChevronLeft className="h-5 w-5" />
-                </Button>
-                <ScrollArea ref={scrollerRef} className="w-full whitespace-nowrap mx-1">
-                    <div className="flex flex-row-reverse justify-start">
-                        {dates.map(date => {
-                            const dateKey = formatDateKey(date);
-                            const isSelected = dateKey === selectedDateKey;
+        <div className="relative bg-card py-2 border-x border-b rounded-b-lg shadow-md flex items-center justify-between px-2">
+            <Button 
+                variant="ghost" 
+                size="icon"
+                className="h-8 w-8 z-10 flex-shrink-0"
+                onClick={() => onDateSelect(formatDateKey(addDays(new Date(selectedDateKey), 1)))}
+            >
+                <ChevronRight className="h-5 w-5" />
+            </Button>
+            <ScrollArea ref={scrollerRef} className="w-full whitespace-nowrap mx-1">
+                <div className="flex flex-row-reverse justify-start">
+                    {dates.map(date => {
+                        const dateKey = formatDateKey(date);
+                        const isSelected = dateKey === selectedDateKey;
 
-                            return (
-                                <button
-                                    key={dateKey}
-                                    ref={isSelected ? selectedButtonRef : null}
-                                    className={cn(
-                                        "relative flex flex-col items-center justify-center h-auto py-1 px-2 min-w-[40px] rounded-lg transition-colors ml-2",
-                                        "text-foreground/80 hover:text-primary",
-                                        isSelected && "text-primary"
-                                    )}
-                                    onClick={() => onDateSelect(dateKey)}
-                                    data-state={isSelected ? 'active' : 'inactive'}
-                                >
-                                    <span className="font-semibold text-sm">{format(date, 'd')}</span>
-                                    {isSelected && (
-                                    <span className="absolute bottom-0 h-0.5 w-3 rounded-full bg-primary transition-transform" />
-                                    )}
-                                </button>
-                            )
-                        })}
-                    </div>
-                    <ScrollBar orientation="horizontal" className="h-0" />
-                </ScrollArea>
-                 <Button 
-                    variant="ghost" 
-                    size="icon"
-                    className="h-8 w-8 z-10"
-                    onClick={() => onDateSelect(formatDateKey(addDays(new Date(selectedDateKey), 1)))}
-                >
-                    <ChevronRight className="h-5 w-5" />
-                </Button>
-            </div>
+                        return (
+                            <button
+                                key={dateKey}
+                                ref={isSelected ? selectedButtonRef : null}
+                                className={cn(
+                                    "relative flex flex-col items-center justify-center h-auto py-1 px-2 min-w-[50px] rounded-lg transition-colors ml-2",
+                                    "text-foreground/80 hover:text-primary",
+                                    isSelected && "bg-primary/10 text-primary"
+                                )}
+                                onClick={() => onDateSelect(dateKey)}
+                                data-state={isSelected ? 'active' : 'inactive'}
+                            >
+                                <span className="text-[10px] font-medium">{getDayLabel(date)}</span>
+                                <span className="font-semibold text-sm">{format(date, 'd')}</span>
+                            </button>
+                        )
+                    })}
+                </div>
+                <ScrollBar orientation="horizontal" className="h-0" />
+            </ScrollArea>
+            <Button 
+                variant="ghost" 
+                size="icon"
+                className="h-8 w-8 z-10 flex-shrink-0"
+                onClick={() => onDateSelect(formatDateKey(subDays(new Date(selectedDateKey), 1)))}
+            >
+                <ChevronLeft className="h-5 w-5" />
+            </Button>
         </div>
     );
 }
