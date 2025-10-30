@@ -298,20 +298,10 @@ export function AllCompetitionsScreen({ navigate, goBack, canGoBack, favorites, 
                     newFavorites.teams![itemId] = { name: (item as Team).name, teamId: itemId, logo: item.logo, type: (item as Team).national ? 'National' : 'Club' };
                 }
             }
-
-            if (!user || user.isAnonymous) {
-                setLocalFavorites(newFavorites);
-            } else if (db) {
-                const favDocRef = doc(db, 'users', user.uid, 'favorites', 'data');
-                const updatePayload = { [`${itemType}.${itemId}`]: isCurrentlyFavorited ? deleteField() : newFavorites[itemType]![itemId] };
-                updateDoc(favDocRef, updatePayload).catch(err => {
-                    errorEmitter.emit('permission-error', new FirestorePermissionError({path: favDocRef.path, operation: 'update', requestResourceData: updatePayload}));
-                });
-            }
             return newFavorites;
         });
         
-    }, [user, db, toast, setFavorites]);
+    }, [setFavorites]);
     
 
     const handleOpenCrownDialog = (team: Team) => {
@@ -359,13 +349,6 @@ export function AllCompetitionsScreen({ navigate, goBack, canGoBack, favorites, 
                     newFavorites.crownedTeams[teamId] = crownedData;
                 }
                 
-                if (user && db && !user.isAnonymous) {
-                    const favDocRef = doc(db, 'users', user.uid, 'favorites', 'data');
-                    const updatePayload = { [`crownedTeams.${teamId}`]: isCurrentlyCrowned ? deleteField() : newFavorites.crownedTeams[teamId] };
-                    updateDoc(favDocRef, updatePayload).catch(err => {
-                        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: favDocRef.path, operation: 'update', requestResourceData: updatePayload }));
-                    });
-                }
                 return newFavorites;
             });
         }
@@ -550,7 +533,7 @@ export function AllCompetitionsScreen({ navigate, goBack, canGoBack, favorites, 
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
                  <Accordion type="multiple" className="w-full space-y-2">
                     <AccordionItem value="national-teams-section" className="rounded-lg border bg-card/50">
-                        <AccordionTrigger className="px-4 py-3 hover:no-underline" onClick={() => fetchNationalTeams()}>
+                        <AccordionTrigger className="px-4 py-3 hover:no-underline" onClick={() => !nationalTeams && fetchNationalTeams()}>
                             <div className="flex items-center gap-3">
                                 <Users className="h-6 w-6 text-primary"/>
                                 <h3 className="text-lg font-bold">المنتخبات</h3>
@@ -566,7 +549,7 @@ export function AllCompetitionsScreen({ navigate, goBack, canGoBack, favorites, 
                  
                  <Accordion type="multiple" className="w-full space-y-2">
                     <AccordionItem value="club-competitions-section" className="rounded-lg border bg-card/50">
-                        <AccordionTrigger className="px-4 py-3 hover:no-underline" onClick={() => fetchAllCompetitions()}>
+                        <AccordionTrigger className="px-4 py-3 hover:no-underline" onClick={() => !allLeagues && fetchAllCompetitions()}>
                             <div className="flex items-center gap-3">
                                 <Trophy className="h-6 w-6 text-primary"/>
                                 <h3 className="text-lg font-bold">البطولات</h3>

@@ -214,27 +214,26 @@ export function AppContentWrapper({ showHints, onHintsDismissed }: { showHints: 
     fetchCustomNames();
   }, [fetchCustomNames]);
   
-  const handleSetFavorites = useCallback((newFavoritesState: React.SetStateAction<Partial<Favorites>>) => {
-    const newFavorites = typeof newFavoritesState === 'function' ? newFavoritesState(favorites) : newFavoritesState;
-    
-    // Update local state first for immediate UI response
-    setFavorites(newFavorites);
+  const handleSetFavorites = useCallback((updater: React.SetStateAction<Partial<Favorites>>) => {
+        setFavorites(prevFavorites => {
+            const newFavorites = typeof updater === 'function' ? updater(prevFavorites) : updater;
 
-    if (!user || user.isAnonymous) {
-        setLocalFavorites(newFavorites);
-    } else if (db) {
-        const favDocRef = doc(db, 'users', user.uid, 'favorites', 'data');
-        // Use setDoc with merge to handle both creation and updates, including deleting fields.
-        setDoc(favDocRef, newFavorites, { merge: true }).catch(err => {
-            console.error("Firestore update failed:", err);
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: favDocRef.path,
-                operation: 'write',
-                requestResourceData: newFavorites,
-            }));
+            if (!user || user.isAnonymous) {
+                setLocalFavorites(newFavorites);
+            } else if (db) {
+                const favDocRef = doc(db, 'users', user.uid, 'favorites', 'data');
+                setDoc(favDocRef, newFavorites, { merge: true }).catch(err => {
+                    console.error("Firestore update failed:", err);
+                    errorEmitter.emit('permission-error', new FirestorePermissionError({
+                        path: favDocRef.path,
+                        operation: 'write',
+                        requestResourceData: newFavorites,
+                    }));
+                });
+            }
+            return newFavorites;
         });
-    }
-}, [user, db, favorites]);
+    }, [user, db]);
 
 
   useEffect(() => {

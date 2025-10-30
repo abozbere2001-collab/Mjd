@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
@@ -58,7 +59,8 @@ const FixturesList = React.memo((props: {
                 }
             });
         } else {
-            otherFixturesList = props.fixtures;
+             // If no favorites, show popular leagues only
+            otherFixturesList = props.fixtures.filter(f => popularLeagueIds.has(f.league.id));
         }
 
         return { favoriteTeamMatches, otherFixtures: otherFixturesList };
@@ -86,7 +88,9 @@ const FixturesList = React.memo((props: {
         );
     }
     
-    if (props.fixtures.length === 0) {
+    const totalFixturesToShow = favoriteTeamMatches.length + otherFixtures.length;
+
+    if (totalFixturesToShow === 0) {
         const message = props.hasAnyFavorites ? "لا توجد مباريات لمفضلاتك في هذا اليوم." : "لا توجد مباريات لهذا اليوم.";
         return (
             <div className="flex flex-col items-center justify-center text-center text-muted-foreground h-64 p-4">
@@ -184,6 +188,7 @@ const DateScroller = ({ selectedDateKey, onDateSelect }: {selectedDateKey: strin
                 scroller.scrollTo({ left: scroller.scrollLeft + scrollOffset, behavior: 'smooth' });
             }
         };
+        // Use a timeout to ensure the DOM is ready for scrolling, especially on initial load
         setTimeout(centerOnSelected, 100);
     }, [selectedDateKey]);
     
@@ -191,7 +196,7 @@ const DateScroller = ({ selectedDateKey, onDateSelect }: {selectedDateKey: strin
 
     return (
         <div className="relative bg-card py-2 border-x border-b rounded-b-lg shadow-md flex flex-col items-center">
-            <h3 className="text-sm font-semibold mb-1 text-center">{selectedDayName}</h3>
+            <h3 className="text-sm font-semibold mb-2 text-center">{selectedDayName}</h3>
             <div className="flex items-center w-full px-1">
                 <Button 
                     variant="ghost" 
@@ -409,17 +414,6 @@ export function MatchesScreen({ navigate, goBack, canGoBack, isVisible, favorite
   
   const allFixturesForDay = matchesCache.get(selectedDateKey) || [];
 
-  const currentFixtures = useMemo(() => {
-    if (!hasAnyFavorites) {
-        return allFixturesForDay.filter(f => popularLeagueIds.has(f.league.id));
-    }
-    return allFixturesForDay.filter(f =>
-        favoritedTeamIds.includes(f.teams.home.id) ||
-        favoritedTeamIds.includes(f.teams.away.id) ||
-        favoritedLeagueIds.includes(f.league.id)
-    );
-}, [allFixturesForDay, hasAnyFavorites, favoritedTeamIds, favoritedLeagueIds]);
-
     
   return (
     <div className="flex h-full flex-col bg-background">
@@ -452,7 +446,7 @@ export function MatchesScreen({ navigate, goBack, canGoBack, isVisible, favorite
             
             <div className="flex-1 overflow-y-auto p-1 space-y-4 mt-2">
                 <FixturesList 
-                    fixtures={currentFixtures}
+                    fixtures={allFixturesForDay}
                     loading={loading}
                     favoritedLeagueIds={favoritedLeagueIds}
                     favoritedTeamIds={favoritedTeamIds}

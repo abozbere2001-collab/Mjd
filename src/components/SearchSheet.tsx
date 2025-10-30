@@ -345,20 +345,9 @@ export function SearchSheet({ children, navigate, initialItemType, favorites, cu
                     : { name: (item as Team).name, teamId: itemId, logo: item.logo, type: (item as Team).national ? 'National' : 'Club' };
                 newFavorites[itemType]![itemId] = favData as any;
             }
-    
-            if (!user || user.isAnonymous) { // Guest mode: save to local storage
-                setLocalFavorites(newFavorites);
-            } else if (db) { // Logged-in user: update Firestore
-                const favDocRef = doc(db, 'users', user.uid, 'favorites', 'data');
-                const updateData = { [`${itemType}.${itemId}`]: isCurrentlyFavorited ? deleteField() : newFavorites[itemType]![itemId] };
-                updateDoc(favDocRef, updateData).catch(err => {
-                    errorEmitter.emit('permission-error', new FirestorePermissionError({path: favDocRef.path, operation: 'update', requestResourceData: updateData}));
-                });
-            }
-    
             return newFavorites;
         });
-    }, [user, db, setFavorites, toast]);
+    }, [user, setFavorites, toast]);
 
 
   const handleOpenCrownDialog = (team: Item) => {
@@ -417,16 +406,6 @@ export function SearchSheet({ children, navigate, initialItemType, favorites, cu
                 delete newFavorites.crownedTeams[teamId];
             } else {
                 newFavorites.crownedTeams[teamId] = { teamId, name: (originalData as Team).name, logo: (originalData as Team).logo, note: newNote };
-            }
-
-            if (user && !user.isAnonymous) {
-                const favDocRef = doc(db, 'users', user.uid, 'favorites', 'data');
-                const updateData = { [`crownedTeams.${teamId}`]: newFavorites.crownedTeams[teamId] || deleteField() };
-                updateDoc(favDocRef, updateData).catch(err => {
-                    errorEmitter.emit('permission-error', new FirestorePermissionError({ path: favDocRef.path, operation: 'update', requestResourceData: updateData }));
-                });
-            } else {
-                setLocalFavorites(newFavorites);
             }
             return newFavorites;
         });
@@ -538,4 +517,3 @@ export function SearchSheet({ children, navigate, initialItemType, favorites, cu
     </Sheet>
   );
 }
-
