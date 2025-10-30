@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -345,7 +346,7 @@ export function SearchSheet({ children, navigate, initialItemType, favorites, cu
                 newFavorites[itemType]![itemId] = favData as any;
             }
     
-            if (!user) { // Guest mode: save to local storage
+            if (!user || user.isAnonymous) { // Guest mode: save to local storage
                 setLocalFavorites(newFavorites);
             } else if (db) { // Logged-in user: update Firestore
                 const favDocRef = doc(db, 'users', user.uid, 'favorites', 'data');
