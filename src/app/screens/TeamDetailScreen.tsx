@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
@@ -194,7 +195,6 @@ const TeamDetailsTabs = ({ teamId, leagueId, navigate, onPinToggle, pinnedPredic
             setLoading(true);
 
             try {
-                // Fetch fixtures and stats in parallel
                 const [fixturesRes, statsRes] = await Promise.all([
                     fetch(`/api/football/fixtures?team=${teamId}&season=${CURRENT_SEASON}`),
                     fetch(`/api/football/teams/statistics?team=${teamId}&season=${CURRENT_SEASON}${leagueId ? `&league=${leagueId}` : ''}`)
@@ -217,7 +217,6 @@ const TeamDetailsTabs = ({ teamId, leagueId, navigate, onPinToggle, pinnedPredic
                 setFixtures(sortedFixtures);
                 setStats(teamStats);
 
-                // Now, determine the league ID and fetch standings
                 const effectiveLeagueId = leagueId || teamStats?.league?.id;
 
                 if (effectiveLeagueId) {

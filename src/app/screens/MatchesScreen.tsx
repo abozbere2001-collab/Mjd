@@ -5,11 +5,11 @@ import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import type { ScreenProps } from '@/app/page';
-import { format, addDays, subDays, isToday, isYesterday, isTomorrow } from 'date-fns';
+import { format, addDays, subDays, isToday } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useAdmin, useAuth, useFirestore } from '@/firebase/provider';
-import { doc, onSnapshot, collection, getDocs, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
-import { Loader2, Search, Star, CalendarClock, Crown, Pencil, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { doc, onSnapshot, collection, getDocs, setDoc, deleteDoc } from 'firebase/firestore';
+import { Loader2, Search, Star, Crown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -19,14 +19,9 @@ import { ProfileButton } from '../AppContentWrapper';
 import type { Fixture as FixtureType, Favorites, PredictionMatch } from '@/lib/types';
 import { FixtureItem } from '@/components/FixtureItem';
 import { hardcodedTranslations } from '@/lib/hardcoded-translations';
-import { getLocalFavorites, setLocalFavorites } from '@/lib/local-favorites';
 import { POPULAR_LEAGUES } from '@/lib/popular-data';
 import { useToast } from '@/hooks/use-toast';
-import { RenameDialog } from '@/components/RenameDialog';
-import { LeagueHeaderItem } from '@/components/LeagueHeaderItem';
-import { CURRENT_SEASON } from '@/lib/constants';
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 interface GroupedFixtures {
     [leagueName: string]: {
@@ -37,8 +32,6 @@ interface GroupedFixtures {
 
 const popularLeagueIds = new Set(POPULAR_LEAGUES.slice(0, 15).map(l => l.id));
 
-
-// Fixtures List Component
 const FixturesList = React.memo((props: { 
     fixtures: FixtureType[], 
     loading: boolean,
@@ -65,7 +58,6 @@ const FixturesList = React.memo((props: {
                 }
             });
         } else {
-            // If no favorites, all fixtures are "other" fixtures (popular ones)
             otherFixturesList = props.fixtures;
         }
 
@@ -95,7 +87,7 @@ const FixturesList = React.memo((props: {
     }
     
     if (props.fixtures.length === 0) {
-        const message = "لا توجد مباريات لهذا اليوم.";
+        const message = props.hasAnyFavorites ? "لا توجد مباريات لمفضلاتك في هذا اليوم." : "لا توجد مباريات لهذا اليوم.";
         return (
             <div className="flex flex-col items-center justify-center text-center text-muted-foreground h-64 p-4">
                 <p>{message}</p>
@@ -160,13 +152,10 @@ const FixturesList = React.memo((props: {
 FixturesList.displayName = 'FixturesList';
 
 
-// Date Scroller
 const formatDateKey = (date: Date): string => format(date, 'yyyy-MM-dd');
 
 const getDayLabel = (date: Date) => {
     if (isToday(date)) return "اليوم";
-    if (isYesterday(date)) return "الأمس";
-    if (isTomorrow(date)) return "غداً";
     return format(date, "EEEE", { locale: ar });
 };
 
@@ -198,50 +187,53 @@ const DateScroller = ({ selectedDateKey, onDateSelect }: {selectedDateKey: strin
         setTimeout(centerOnSelected, 100);
     }, [selectedDateKey]);
     
-    return (
-        <div className="relative bg-card py-2 border-x border-b rounded-b-lg shadow-md flex items-center justify-between px-2">
-            <Button 
-                variant="ghost" 
-                size="icon"
-                className="h-8 w-8 z-10 flex-shrink-0"
-                onClick={() => onDateSelect(formatDateKey(addDays(new Date(selectedDateKey), 1)))}
-            >
-                <ChevronRight className="h-5 w-5" />
-            </Button>
-            <ScrollArea ref={scrollerRef} className="w-full whitespace-nowrap mx-1">
-                <div className="flex flex-row-reverse justify-start">
-                    {dates.map(date => {
-                        const dateKey = formatDateKey(date);
-                        const isSelected = dateKey === selectedDateKey;
+    const selectedDayName = getDayLabel(new Date(selectedDateKey));
 
-                        return (
-                            <button
-                                key={dateKey}
-                                ref={isSelected ? selectedButtonRef : null}
-                                className={cn(
-                                    "relative flex flex-col items-center justify-center h-auto py-1 px-2 min-w-[60px] rounded-lg transition-colors ml-2",
-                                    "text-foreground/80 hover:text-primary",
-                                    isSelected && "bg-primary/10 text-primary"
-                                )}
-                                onClick={() => onDateSelect(dateKey)}
-                                data-state={isSelected ? 'active' : 'inactive'}
-                            >
-                                <span className="text-[10px] font-medium">{getDayLabel(date)}</span>
-                                <span className="font-semibold text-sm">{format(date, 'd MMM', { locale: ar })}</span>
-                            </button>
-                        )
-                    })}
-                </div>
-                <ScrollBar orientation="horizontal" className="h-0" />
-            </ScrollArea>
-            <Button 
-                variant="ghost" 
-                size="icon"
-                className="h-8 w-8 z-10 flex-shrink-0"
-                onClick={() => onDateSelect(formatDateKey(subDays(new Date(selectedDateKey), 1)))}
-            >
-                <ChevronLeft className="h-5 w-5" />
-            </Button>
+    return (
+        <div className="relative bg-card py-2 border-x border-b rounded-b-lg shadow-md flex flex-col items-center">
+            <h3 className="text-sm font-semibold mb-1 text-center">{selectedDayName}</h3>
+            <div className="flex items-center w-full px-1">
+                <Button 
+                    variant="ghost" 
+                    size="icon"
+                    className="h-9 w-9 z-10 flex-shrink-0"
+                    onClick={() => onDateSelect(formatDateKey(subDays(new Date(selectedDateKey), 1)))}
+                >
+                    <ChevronRight className="h-5 w-5" />
+                </Button>
+                <ScrollArea ref={scrollerRef} className="w-full whitespace-nowrap mx-1">
+                    <div className="flex flex-row-reverse justify-start items-center h-9">
+                        {dates.map(date => {
+                            const dateKey = formatDateKey(date);
+                            const isSelected = dateKey === selectedDateKey;
+
+                            return (
+                                <button
+                                    key={dateKey}
+                                    ref={isSelected ? selectedButtonRef : null}
+                                    className={cn(
+                                        "relative flex items-center justify-center h-8 w-8 rounded-full transition-colors ml-2 flex-shrink-0",
+                                        "text-foreground/80 hover:text-primary",
+                                        isSelected && "bg-primary text-primary-foreground"
+                                    )}
+                                    onClick={() => onDateSelect(dateKey)}
+                                >
+                                    <span className="font-semibold text-sm">{format(date, 'd')}</span>
+                                </button>
+                            )
+                        })}
+                    </div>
+                    <ScrollBar orientation="horizontal" className="h-0" />
+                </ScrollArea>
+                <Button 
+                    variant="ghost" 
+                    size="icon"
+                    className="h-9 w-9 z-10 flex-shrink-0"
+                    onClick={() => onDateSelect(formatDateKey(addDays(new Date(selectedDateKey), 1)))}
+                >
+                    <ChevronLeft className="h-5 w-5" />
+                </Button>
+            </div>
         </div>
     );
 }
@@ -344,13 +336,13 @@ export function MatchesScreen({ navigate, goBack, canGoBack, isVisible, favorite
 
     const updateLiveData = useCallback(async (dateKey: string, abortSignal: AbortSignal) => {
         const cachedFixtures = matchesCache.get(dateKey);
-        if (!cachedFixtures) return; // No data to update
+        if (!cachedFixtures) return;
 
         const liveFixtureIds = cachedFixtures
             .filter(f => f.fixture.status.short !== 'FT' && f.fixture.status.short !== 'PST' && f.fixture.status.short !== 'CANC')
             .map(f => f.fixture.id);
 
-        if (liveFixtureIds.length === 0) return; // No live matches to update
+        if (liveFixtureIds.length === 0) return;
         
         try {
             const res = await fetch(`/api/football/fixtures?ids=${liveFixtureIds.join('-')}`, { signal: abortSignal });
@@ -390,15 +382,14 @@ export function MatchesScreen({ navigate, goBack, canGoBack, isVisible, favorite
       if (!matchesCache.has(selectedDateKey)) {
           fetchAndProcessData(selectedDateKey, controller.signal);
       } else {
-          setLoading(false); // Already cached
+          setLoading(false);
       }
       
-      // Setup interval for live updates
       const interval = setInterval(() => {
-          if (document.visibilityState === 'visible') { // Only update if tab is visible
+          if (document.visibilityState === 'visible') {
             updateLiveData(selectedDateKey, controller.signal);
           }
-      }, 60000); // 60 seconds
+      }, 60000);
 
       return () => {
           controller.abort();
@@ -478,5 +469,3 @@ export function MatchesScreen({ navigate, goBack, canGoBack, isVisible, favorite
     </div>
   );
 }
-
-    

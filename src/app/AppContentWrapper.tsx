@@ -50,7 +50,8 @@ import type { Favorites } from '@/lib/types';
 import { getLocalFavorites, setLocalFavorites, GUEST_MODE_KEY } from '@/lib/local-favorites';
 import { AnimatePresence, motion } from 'framer-motion';
 import { OnboardingHints } from '@/components/OnboardingHints';
-
+import { FirestorePermissionError } from '@/firebase/errors';
+import { errorEmitter } from '@/firebase/error-emitter';
 
 const screenConfig: Record<string, { component: React.ComponentType<any>;}> = {
   Matches: { component: MatchesScreen },
@@ -210,12 +211,13 @@ export function AppContentWrapper({ showHints, onHintsDismissed }: { showHints: 
   }, [db]);
   
   useEffect(() => {
-    // Always fetch custom names, regardless of user state.
     fetchCustomNames();
   }, [fetchCustomNames]);
   
   const handleSetFavorites = useCallback((newFavoritesState: React.SetStateAction<Partial<Favorites>>) => {
     const newFavorites = typeof newFavoritesState === 'function' ? newFavoritesState(favorites) : newFavoritesState;
+    
+    // Update local state first for immediate UI response
     setFavorites(newFavorites);
 
     if (!user || user.isAnonymous) {
@@ -253,7 +255,6 @@ export function AppContentWrapper({ showHints, onHintsDismissed }: { showHints: 
       return;
     }
 
-    // Cleanup previous listeners before setting up new ones
     cleanup();
 
     if (user && db && !user.isAnonymous) {
@@ -265,10 +266,10 @@ export function AppContentWrapper({ showHints, onHintsDismissed }: { showHints: 
         },
         (error) => {
           console.error("Error listening to remote favorites:", error);
-          setFavorites({}); // Fallback to empty on error
+          setFavorites({});
         }
       );
-    } else { // Guest mode or logged out
+    } else {
       setFavorites(getLocalFavorites());
       window.addEventListener('localFavoritesChanged', localFavsListener);
     }
@@ -301,7 +302,6 @@ export function AppContentWrapper({ showHints, onHintsDismissed }: { showHints: 
       
       setNavigationState(prevState => {
           if (mainTabs.includes(screen)) {
-               // If it's a main tab, reset its stack to the root and switch to it
               return {
                   ...prevState,
                   activeTab: screen,
@@ -312,7 +312,6 @@ export function AppContentWrapper({ showHints, onHintsDismissed }: { showHints: 
               };
           }
           
-          // If it's a sub-screen, push it onto the current active stack
           const newItem = { key: newKey, screen, props };
           const currentStack = prevState.stacks[prevState.activeTab] || [];
           return {
@@ -331,10 +330,10 @@ export function AppContentWrapper({ showHints, onHintsDismissed }: { showHints: 
       }
   }, [navigate]);
   
-  const isDataReady = customNames !== null;
+  const isDataReady = customNames !== null && !isUserLoading;
 
   if (!isDataReady) {
-    return null; // Return null instead of loader to avoid the second loading screen
+    return null;
   }
 
   if (showSplashAd) {
@@ -362,8 +361,8 @@ export function AppContentWrapper({ showHints, onHintsDismissed }: { showHints: 
     navigate,
     goBack,
     customNames,
-    favorites, // Make sure the most up-to-date favorites are passed
-    setFavorites: handleSetFavorites, // Pass the correct setter function
+    favorites,
+    setFavorites: handleSetFavorites,
     onCustomNameChange: fetchCustomNames,
   };
 
@@ -431,5 +430,3 @@ export function AppContentWrapper({ showHints, onHintsDismissed }: { showHints: 
         </main>
   );
 }
-
-    

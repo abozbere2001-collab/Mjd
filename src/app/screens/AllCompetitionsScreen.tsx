@@ -49,6 +49,41 @@ interface RenameState {
   originalName?: string;
 }
 
+const COMPETITIONS_CACHE_KEY = 'goalstack_all_competitions_cache_v1';
+const TEAMS_CACHE_KEY = 'goalstack_national_teams_cache_v1';
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+
+interface Cache<T> {
+    data: T;
+    timestamp: number;
+}
+
+const getCachedData = <T,>(key: string): T | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+        const cachedItem = localStorage.getItem(key);
+        if (!cachedItem) return null;
+        const { data, timestamp } = JSON.parse(cachedItem) as Cache<T>;
+        if (Date.now() - timestamp > CACHE_DURATION) {
+            localStorage.removeItem(key);
+            return null;
+        }
+        return data;
+    } catch (e) {
+        return null;
+    }
+};
+
+const setCachedData = <T,>(key: string, data: T) => {
+    if (typeof window === 'undefined') return;
+    try {
+        const cacheItem: Cache<T> = { data, timestamp: Date.now() };
+        localStorage.setItem(key, JSON.stringify(cacheItem));
+    } catch (e) {
+        console.error(`Failed to cache data for key ${key}:`, e);
+    }
+};
+
 // --- CONSTANTS ---
 const countryToContinent: { [key: string]: string } = {
     "World": "World", "England": "Europe", "Spain": "Europe", "Germany": "Europe", "Italy": "Europe", "France": "Europe", "Netherlands": "Europe", "Portugal": "Europe", "Belgium": "Europe", "Russia": "Europe", "Turkey": "Europe", "Greece": "Europe", "Switzerland": "Europe", "Austria": "Europe", "Denmark": "Europe", "Scotland": "Europe", "Sweden": "Europe", "Norway": "Europe", "Poland": "Europe", "Ukraine": "Europe", "Czech-Republic": "Europe", "Croatia": "Europe", "Romania": "Europe", "Serbia": "Europe", "Hungary": "Europe", "Finland": "Europe", "Ireland": "Europe", "Northern-Ireland": "Europe", "Wales": "Europe", "Iceland": "Europe", "Albania": "Europe", "Georgia": "Europe", "Latvia": "Europe", "Estonia": "Europe", "Lithuania": "Europe", "Luxembourg": "Europe", "Faroe-Islands": "Europe", "Malta": "Europe", "Andorra": "Europe", "San-Marino": "Europe", "Gibraltar": "Europe", "Kosovo": "Europe", "Bosnia-and-Herzegovina": "Europe", "Slovakia": "Europe", "Slovenia": "Europe", "Bulgaria": "Europe", "Cyprus": "Europe", "Azerbaijan": "Europe", "Armenia": "Europe", "Belarus": "Europe", "Moldova": "Europe", "North-Macedonia": "Europe", "Montenegro": "Europe",
@@ -64,34 +99,23 @@ const WORLD_LEAGUES_KEYWORDS = ["world", "uefa", "champions league", "europa", "
 
 const priorityCountries = [ "England", "Spain", "Germany", "Italy", "France", "Netherlands", "Portugal", "Saudi Arabia", "Iraq", "Japan", "Australia", "Brazil", "Argentina", "Egypt", "Morocco", "Tunisia", "Algeria", "Qatar", "United Arab Emirates", "Jordan", "Syria", "Lebanon", "Oman", "Kuwait", "Bahrain", "Sudan", "Libya", "Yemen"];
 const priorityNationalTeams = [
-    // South America
-    6, 28, 5, 4, 7, // Brazil, Argentina, Colombia, Chile, Uruguay
-    // Europe
-    2, 8, 9, 10, 12, 13, 27, 21, // France, Germany, England, Portugal, Spain, Italy, Netherlands, Belgium
-    // Asia
-    769, 768, 775, 25, 24, 22, 17, // Iraq, Saudi Arabia, Qatar, Japan, South Korea, Iran, Australia
-    // Africa
-    15, 19, 20, 29, 31, 23, // Morocco, Egypt, Algeria, Tunisia, Senegal, Nigeria
+    6, 28, 5, 4, 7, 2, 8, 9, 10, 12, 13, 27, 21, 769, 768, 775, 25, 24, 22, 17, 15, 19, 20, 29, 31, 23
 ];
 
 
 // --- Sorting Logic ---
 const getLeagueImportance = (leagueName: string): number => {
     const lowerCaseName = leagueName.toLowerCase();
-    // World
     if (lowerCaseName.includes('world cup')) return 1;
     if (lowerCaseName.includes('champions league')) return 2;
     if (lowerCaseName.includes('euro') || lowerCaseName.includes('copa america') || lowerCaseName.includes('afc asian cup') || lowerCaseName.includes('africa cup of nations')) return 3;
     if (lowerCaseName.includes('europa league') || lowerCaseName.includes('afc cup') || lowerCaseName.includes('conference league')) return 4;
     if (lowerCaseName.includes('nations league') || lowerCaseName.includes('club world cup')) return 5;
     if (lowerCaseName.includes('friendly')) return 99;
-
-    // Domestic
     if (lowerCaseName.includes('premier league') || lowerCaseName.includes('la liga') || lowerCaseName.includes('serie a') || lowerCaseName.includes('bundesliga') || lowerCaseName.includes('ligue 1') || lowerCaseName.includes('stars league')) return 10;
     if (lowerCaseName.includes('cup') || lowerCaseName.includes('copa') || lowerCaseName.includes('kfp') || lowerCaseName.includes("king's cup")) return 11;
     if (lowerCaseName.includes('championship') || lowerCaseName.includes('segunda') || lowerCaseName.includes('serie b') || lowerCaseName.includes('division 2')) return 12;
-
-    return 50; // Default importance
+    return 50;
 }
 
 
@@ -127,7 +151,11 @@ export function AllCompetitionsScreen({ navigate, goBack, canGoBack, favorites, 
 
 
     const fetchAllCompetitions = useCallback(async () => {
-        if (allLeagues) return; // Already fetched
+        const cachedLeagues = getCachedData<FullLeague[]>(COMPETITIONS_CACHE_KEY);
+        if (cachedLeagues) {
+            setAllLeagues(cachedLeagues);
+            return;
+        }
 
         setLoadingClubData(true);
         toast({ title: 'جاري جلب بيانات البطولات...', description: 'قد تستغرق هذه العملية دقيقة في المرة الأولى.' });
@@ -139,13 +167,14 @@ export function AllCompetitionsScreen({ navigate, goBack, canGoBack, favorites, 
             const leaguesData: FullLeague[] = data.response || [];
             
             setAllLeagues(leaguesData);
+            setCachedData(COMPETITIONS_CACHE_KEY, leaguesData);
         } catch (error) {
              console.error("Error fetching all leagues:", error);
             toast({ variant: 'destructive', title: "خطأ", description: "فشل في جلب بيانات البطولات." });
         } finally {
             setLoadingClubData(false);
         }
-    }, [toast, allLeagues]);
+    }, [toast]);
 
     
     const sortedGroupedCompetitions = useMemo(() => {
@@ -175,7 +204,6 @@ export function AllCompetitionsScreen({ navigate, goBack, canGoBack, favorites, 
                 grouped[continent][countryKey].push(league);
             });
         
-        // Sort leagues within each country
         for (const continent in grouped) {
             for (const country in grouped[continent]) {
                 grouped[continent][country].sort((a, b) => {
@@ -184,7 +212,6 @@ export function AllCompetitionsScreen({ navigate, goBack, canGoBack, favorites, 
                     if (importanceA !== importanceB) {
                         return importanceA - importanceB;
                     }
-                    // Secondary sort by translated name if importance is the same
                     const translatedNameA = getName('league', a.league.id, a.league.name);
                     const translatedNameB = getName('league', b.league.id, b.league.name);
                     return translatedNameA.localeCompare(translatedNameB, 'ar');
@@ -197,19 +224,23 @@ export function AllCompetitionsScreen({ navigate, goBack, canGoBack, favorites, 
 
     
     const fetchNationalTeams = useCallback(async () => {
-        if (nationalTeams) return; // Already fetched
+        const cachedTeams = getCachedData<Team[]>(TEAMS_CACHE_KEY);
+        if (cachedTeams) {
+            setNationalTeams(cachedTeams);
+            return;
+        }
 
         setLoadingNationalTeams(true);
         toast({ title: 'جاري جلب بيانات المنتخبات...', description: 'قد تستغرق هذه العملية دقيقة في المرة الأولى.' });
     
         try {
-            // Since this is a massive fetch, we do it without caching countries first
             const res = await fetch('/api/football/teams?country=');
             if(!res.ok) throw new Error("Failed to fetch teams");
 
             const data = await res.json();
             const nationalTeamsData = (data.response || []).filter((r: { team: Team }) => r.team.national).map((r: { team: Team}) => r.team);
             setNationalTeams(nationalTeamsData);
+            setCachedData(TEAMS_CACHE_KEY, nationalTeamsData);
 
         } catch (error) {
             console.error("Error fetching national teams:", error);
@@ -217,7 +248,7 @@ export function AllCompetitionsScreen({ navigate, goBack, canGoBack, favorites, 
         } finally {
             setLoadingNationalTeams(false);
         }
-    }, [toast, nationalTeams]);
+    }, [toast]);
     
     const groupedNationalTeams = useMemo(() => {
         if (!nationalTeams || !customNames) return null;
@@ -250,41 +281,37 @@ export function AllCompetitionsScreen({ navigate, goBack, canGoBack, favorites, 
 
     const handleFavoriteToggle = useCallback((item: { id: number, name: string, logo: string, national?: boolean }, itemType: 'leagues' | 'teams') => {
         const itemId = item.id;
-    
-        if (!user) { // Guest mode logic
-            const currentFavorites = getLocalFavorites();
-            if (!currentFavorites[itemType]) currentFavorites[itemType] = {};
-            
-            const isCurrentlyFavorited = !!currentFavorites[itemType]?.[itemId];
+        
+        setFavorites(prev => {
+            const newFavorites = JSON.parse(JSON.stringify(prev || {}));
+            if (!newFavorites[itemType]) {
+                newFavorites[itemType] = {};
+            }
+            const isCurrentlyFavorited = !!newFavorites[itemType]?.[itemId];
     
             if (isCurrentlyFavorited) {
-                delete currentFavorites[itemType]![itemId];
+                delete newFavorites[itemType]![itemId];
             } else {
-                 if (itemType === 'leagues') {
-                    currentFavorites.leagues![itemId] = { name: item.name, leagueId: itemId, logo: item.logo, notificationsEnabled: true };
+                if (itemType === 'leagues') {
+                    newFavorites.leagues![itemId] = { name: item.name, leagueId: itemId, logo: item.logo, notificationsEnabled: true };
                 } else {
-                    currentFavorites.teams![itemId] = { name: (item as Team).name, teamId: itemId, logo: item.logo, type: (item as Team).national ? 'National' : 'Club' };
+                    newFavorites.teams![itemId] = { name: (item as Team).name, teamId: itemId, logo: item.logo, type: (item as Team).national ? 'National' : 'Club' };
                 }
             }
-            setLocalFavorites(currentFavorites);
-            return;
-        }
-    
-        // Logged-in user logic
-        const favDocRef = doc(db, 'users', user.uid, 'favorites', 'data');
-        const isCurrentlyFavorited = !!favorites?.[itemType]?.[itemId];
-        const updatePayload = {
-            [`${itemType}.${itemId}`]: isCurrentlyFavorited
-                ? deleteField()
-                : itemType === 'leagues' 
-                    ? { name: item.name, leagueId: itemId, logo: item.logo, notificationsEnabled: true }
-                    : { name: (item as Team).name, teamId: itemId, logo: item.logo, type: (item as Team).national ? 'National' : 'Club' }
-        };
-        updateDoc(favDocRef, updatePayload).catch(err => {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({path: favDocRef.path, operation: 'update', requestResourceData: updatePayload}));
+
+            if (!user || user.isAnonymous) {
+                setLocalFavorites(newFavorites);
+            } else if (db) {
+                const favDocRef = doc(db, 'users', user.uid, 'favorites', 'data');
+                const updatePayload = { [`${itemType}.${itemId}`]: isCurrentlyFavorited ? deleteField() : newFavorites[itemType]![itemId] };
+                updateDoc(favDocRef, updatePayload).catch(err => {
+                    errorEmitter.emit('permission-error', new FirestorePermissionError({path: favDocRef.path, operation: 'update', requestResourceData: updatePayload}));
+                });
+            }
+            return newFavorites;
         });
         
-    }, [user, db, toast, favorites]);
+    }, [user, db, toast, setFavorites]);
     
 
     const handleOpenCrownDialog = (team: Team) => {
@@ -320,29 +347,27 @@ export function AllCompetitionsScreen({ navigate, goBack, canGoBack, favorites, 
     
         } else if (purpose === 'crown' && user) {
             const teamId = Number(id);
-            
-            const newFavorites = JSON.parse(JSON.stringify(favorites || {}));
-            if (!newFavorites.crownedTeams) newFavorites.crownedTeams = {};
-            const isCurrentlyCrowned = !!newFavorites.crownedTeams?.[teamId];
-            
-            let updatePayload: any;
-
-            if (isCurrentlyCrowned) {
-                delete newFavorites.crownedTeams[teamId];
-                updatePayload = { [`crownedTeams.${teamId}`]: deleteField() };
-            } else {
-                const crownedData = { teamId, name: (originalData as Team).name, logo: (originalData as Team).logo, note: newNote };
-                newFavorites.crownedTeams[teamId] = crownedData;
-                updatePayload = { [`crownedTeams.${teamId}`]: crownedData };
-            }
-            
-            if (user && db && !user.isAnonymous) {
-                const favDocRef = doc(db, 'users', user.uid, 'favorites', 'data');
-                updateDoc(favDocRef, updatePayload).catch(err => {
-                    errorEmitter.emit('permission-error', new FirestorePermissionError({ path: favDocRef.path, operation: 'update', requestResourceData: updatePayload }));
-                });
-            }
-            setFavorites(newFavorites);
+            setFavorites(prev => {
+                const newFavorites = JSON.parse(JSON.stringify(prev || {}));
+                if (!newFavorites.crownedTeams) newFavorites.crownedTeams = {};
+                const isCurrentlyCrowned = !!newFavorites.crownedTeams?.[teamId];
+                
+                if (isCurrentlyCrowned) {
+                    delete newFavorites.crownedTeams[teamId];
+                } else {
+                    const crownedData = { teamId, name: (originalData as Team).name, logo: (originalData as Team).logo, note: newNote };
+                    newFavorites.crownedTeams[teamId] = crownedData;
+                }
+                
+                if (user && db && !user.isAnonymous) {
+                    const favDocRef = doc(db, 'users', user.uid, 'favorites', 'data');
+                    const updatePayload = { [`crownedTeams.${teamId}`]: isCurrentlyCrowned ? deleteField() : newFavorites.crownedTeams[teamId] };
+                    updateDoc(favDocRef, updatePayload).catch(err => {
+                        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: favDocRef.path, operation: 'update', requestResourceData: updatePayload }));
+                    });
+                }
+                return newFavorites;
+            });
         }
     
         setRenameItem(null);
@@ -361,8 +386,8 @@ export function AllCompetitionsScreen({ navigate, goBack, canGoBack, favorites, 
     
     const handleAdminRefresh = async () => {
         if (!isAdmin) return;
-        sessionStorage.removeItem('goalstack_all_competitions_cache');
-        sessionStorage.removeItem('goalstack_national_teams_cache');
+        localStorage.removeItem(COMPETITIONS_CACHE_KEY);
+        localStorage.removeItem(TEAMS_CACHE_KEY);
         toast({ title: 'بدء التحديث...', description: 'جاري تحديث بيانات البطولات والمنتخبات.' });
         setAllLeagues(null);
         setNationalTeams(null);
@@ -565,8 +590,7 @@ export function AllCompetitionsScreen({ navigate, goBack, canGoBack, favorites, 
             <AddCompetitionDialog isOpen={isAddOpen} onOpenChange={(isOpen) => {
                 setAddOpen(isOpen);
                 if(!isOpen) {
-                    setAllLeagues(null);
-                    fetchAllCompetitions();
+                    onCustomNameChange();
                 }
             }} />
         </div>
