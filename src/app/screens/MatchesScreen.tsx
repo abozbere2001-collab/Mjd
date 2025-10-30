@@ -65,6 +65,7 @@ const FixturesList = React.memo((props: {
                 }
             });
         } else {
+            // If no favorites, all fixtures are "other" fixtures (popular ones)
             otherFixturesList = props.fixtures;
         }
 
@@ -94,13 +95,11 @@ const FixturesList = React.memo((props: {
     }
     
     if (props.fixtures.length === 0) {
-        const message = props.hasAnyFavorites 
-            ? "لا توجد مباريات لمفضلاتك هذا اليوم."
-            : "لا توجد مباريات شائعة لهذا اليوم.";
+        const message = "لا توجد مباريات لهذا اليوم.";
         return (
             <div className="flex flex-col items-center justify-center text-center text-muted-foreground h-64 p-4">
                 <p>{message}</p>
-                {props.hasAnyFavorites || <Button className="mt-4" onClick={() => props.navigate('AllCompetitions')}>استكشف البطولات</Button>}
+                <Button className="mt-4" onClick={() => props.navigate('AllCompetitions')}>استكشف البطولات</Button>
             </div>
         );
     }
@@ -196,10 +195,7 @@ const DateScroller = ({ selectedDateKey, onDateSelect }: {selectedDateKey: strin
                 scroller.scrollTo({ left: scroller.scrollLeft + scrollOffset, behavior: 'smooth' });
             }
         };
-
-        // Use a small timeout to ensure the ref is attached and the DOM is ready, especially on initial load.
         setTimeout(centerOnSelected, 100);
-
     }, [selectedDateKey]);
     
     return (
@@ -482,3 +478,5 @@ export function MatchesScreen({ navigate, goBack, canGoBack, isVisible, favorite
     </div>
   );
 }
+
+    

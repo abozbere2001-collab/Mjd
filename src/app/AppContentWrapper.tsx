@@ -45,7 +45,7 @@ import { cn } from '@/lib/utils';
 import { ManageTopScorersScreen } from './screens/ManageTopScorersScreen';
 import { IraqScreen } from './screens/IraqScreen';
 import { PredictionsScreen } from './screens/PredictionsScreen';
-import { doc, onSnapshot, getDocs, collection, updateDoc, deleteField } from 'firebase/firestore';
+import { doc, onSnapshot, getDocs, collection, updateDoc, deleteField, writeBatch, setDoc } from 'firebase/firestore';
 import type { Favorites } from '@/lib/types';
 import { getLocalFavorites, setLocalFavorites, GUEST_MODE_KEY } from '@/lib/local-favorites';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -215,23 +215,25 @@ export function AppContentWrapper({ showHints, onHintsDismissed }: { showHints: 
   }, [fetchCustomNames]);
   
   const handleSetFavorites = useCallback((newFavoritesState: React.SetStateAction<Partial<Favorites>>) => {
-      setFavorites(prevFavorites => {
-          const newFavorites = typeof newFavoritesState === 'function' ? newFavoritesState(prevFavorites) : newFavoritesState;
-          
-          if (!user || user.isAnonymous) {
-              setLocalFavorites(newFavorites);
-          } else if (db) {
-              // This is a simplified approach. A more robust solution would diff the favorites
-              // and generate specific update/deleteField payloads.
-              const favDocRef = doc(db, 'users', user.uid, 'favorites', 'data');
-              updateDoc(favDocRef, newFavorites).catch(err => {
-                  console.error("Firestore update failed:", err);
-                  // For a more robust solution, you might want to revert the state change here.
-              });
-          }
-          return newFavorites;
-      });
-  }, [user, db]);
+    const newFavorites = typeof newFavoritesState === 'function' ? newFavoritesState(favorites) : newFavoritesState;
+    setFavorites(newFavorites);
+
+    if (!user || user.isAnonymous) {
+        setLocalFavorites(newFavorites);
+    } else if (db) {
+        const favDocRef = doc(db, 'users', user.uid, 'favorites', 'data');
+        // Use setDoc with merge to handle both creation and updates, including deleting fields.
+        setDoc(favDocRef, newFavorites, { merge: true }).catch(err => {
+            console.error("Firestore update failed:", err);
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: favDocRef.path,
+                operation: 'write',
+                requestResourceData: newFavorites,
+            }));
+        });
+    }
+}, [user, db, favorites]);
+
 
   useEffect(() => {
     let favsUnsub: (() => void) | null = null;
@@ -429,3 +431,5 @@ export function AppContentWrapper({ showHints, onHintsDismissed }: { showHints: 
         </main>
   );
 }
+
+    
