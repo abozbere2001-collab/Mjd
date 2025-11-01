@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -8,6 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from './ui/skeleton';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
+
+const API_FOOTBALL_HOST = 'v3.football.api-sports.io';
+const API_KEY = process.env.NEXT_PUBLIC_API_FOOTBALL_KEY;
 
 // --- TYPE DEFINITIONS ---
 interface OddValue {
@@ -58,9 +62,14 @@ export function OddsTab({ fixtureId }: { fixtureId: number }) {
         let isMounted = true;
         setLoading(true);
 
+        const headers = {
+            'x-rapidapi-host': API_FOOTBALL_HOST,
+            'x-rapidapi-key': API_KEY || '',
+        };
+
         Promise.all([
-            fetch(`/api/football/odds?fixture=${fixtureId}`),
-            fetch(`/api/football/fixtures?id=${fixtureId}`)
+            fetch(`https://${API_FOOTBALL_HOST}/odds?fixture=${fixtureId}`, { headers }),
+            fetch(`https://${API_FOOTBALL_HOST}/fixtures?id=${fixtureId}`, { headers })
         ])
         .then(async ([oddsRes, fixtureRes]) => {
             if (!oddsRes.ok || !fixtureRes.ok) {
@@ -179,5 +188,3 @@ export function OddsTab({ fixtureId }: { fixtureId: number }) {
         </Card>
     );
 }
-
-    

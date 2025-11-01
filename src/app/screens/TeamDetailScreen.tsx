@@ -28,6 +28,8 @@ import { getLocalFavorites, setLocalFavorites } from '@/lib/local-favorites';
 import { format, isToday, startOfToday } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
+const API_FOOTBALL_HOST = 'v3.football.api-sports.io';
+const API_KEY = process.env.NEXT_PUBLIC_API_FOOTBALL_KEY;
 
 interface TeamData {
     team: Team;
@@ -88,7 +90,12 @@ const TeamPlayersTab = ({ teamId, navigate, customNames, onCustomNameChange }: {
         const fetchPlayers = async () => {
             setLoading(true);
             try {
-                const res = await fetch(`/api/football/players?team=${teamId}&season=${CURRENT_SEASON}`);
+                const res = await fetch(`https://${API_FOOTBALL_HOST}/players?team=${teamId}&season=${CURRENT_SEASON}`, {
+                    headers: {
+                        'x-rapidapi-host': API_FOOTBALL_HOST,
+                        'x-rapidapi-key': API_KEY || '',
+                    },
+                });
                 const data = await res.json();
                 if (data.response) {
                     const fetchedPlayers = data.response.map((p: any) => p.player);
@@ -195,9 +202,14 @@ const TeamDetailsTabs = ({ teamId, leagueId, navigate, onPinToggle, pinnedPredic
             setLoading(true);
 
             try {
+                const headers = {
+                    'x-rapidapi-host': API_FOOTBALL_HOST,
+                    'x-rapidapi-key': API_KEY || '',
+                };
+
                 const [fixturesRes, statsRes] = await Promise.all([
-                    fetch(`/api/football/fixtures?team=${teamId}&season=${CURRENT_SEASON}`),
-                    fetch(`/api/football/teams/statistics?team=${teamId}&season=${CURRENT_SEASON}${leagueId ? `&league=${leagueId}` : ''}`)
+                    fetch(`https://${API_FOOTBALL_HOST}/fixtures?team=${teamId}&season=${CURRENT_SEASON}`, { headers }),
+                    fetch(`https://${API_FOOTBALL_HOST}/teams/statistics?team=${teamId}&season=${CURRENT_SEASON}${leagueId ? `&league=${leagueId}` : ''}`, { headers })
                 ]);
 
                 if (!isMounted) return;
@@ -220,7 +232,7 @@ const TeamDetailsTabs = ({ teamId, leagueId, navigate, onPinToggle, pinnedPredic
                 const effectiveLeagueId = leagueId || teamStats?.league?.id;
 
                 if (effectiveLeagueId) {
-                    const standingsRes = await fetch(`/api/football/standings?league=${effectiveLeagueId}&season=${CURRENT_SEASON}`);
+                    const standingsRes = await fetch(`https://${API_FOOTBALL_HOST}/standings?league=${effectiveLeagueId}&season=${CURRENT_SEASON}`, { headers });
                     if (!standingsRes.ok) throw new Error("Standings API call failed");
                     const standingsData = await standingsRes.json();
                     if (isMounted) {
@@ -435,7 +447,12 @@ export function TeamDetailScreen({ navigate, goBack, canGoBack, teamId, leagueId
         const getTeamInfo = async () => {
             setLoading(true);
             try {
-                const teamRes = await fetch(`/api/football/teams?id=${teamId}`);
+                const teamRes = await fetch(`https://${API_FOOTBALL_HOST}/teams?id=${teamId}`, {
+                     headers: {
+                        'x-rapidapi-host': API_FOOTBALL_HOST,
+                        'x-rapidapi-key': API_KEY || '',
+                    },
+                });
                 if (!teamRes.ok) throw new Error("Team API fetch failed");
                 
                 const data = await teamRes.json();

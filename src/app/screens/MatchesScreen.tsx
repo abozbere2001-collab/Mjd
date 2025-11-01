@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
@@ -23,6 +22,9 @@ import { hardcodedTranslations } from '@/lib/hardcoded-translations';
 import { POPULAR_LEAGUES } from '@/lib/popular-data';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+
+const API_FOOTBALL_HOST = 'v3.football.api-sports.io';
+const API_KEY = process.env.NEXT_PUBLIC_API_FOOTBALL_KEY;
 
 interface GroupedFixtures {
     [leagueName: string]: {
@@ -309,7 +311,13 @@ export function MatchesScreen({ navigate, goBack, canGoBack, isVisible, favorite
         setLoading(true);
 
         try {
-            const res = await fetch(`/api/football/fixtures?date=${dateKey}`, { signal: abortSignal });
+            const res = await fetch(`https://${API_FOOTBALL_HOST}/fixtures?date=${dateKey}`, { 
+                signal: abortSignal,
+                headers: {
+                    'x-rapidapi-host': API_FOOTBALL_HOST,
+                    'x-rapidapi-key': API_KEY || '',
+                },
+             });
             if (!res.ok) throw new Error(`API fetch failed with status ${res.status}`);
             
             const data = await res.json();
@@ -349,7 +357,13 @@ export function MatchesScreen({ navigate, goBack, canGoBack, isVisible, favorite
         if (liveFixtureIds.length === 0) return;
         
         try {
-            const res = await fetch(`/api/football/fixtures?ids=${liveFixtureIds.join('-')}`, { signal: abortSignal });
+            const res = await fetch(`https://${API_FOOTBALL_HOST}/fixtures?ids=${liveFixtureIds.join('-')}`, { 
+                signal: abortSignal,
+                headers: {
+                    'x-rapidapi-host': API_FOOTBALL_HOST,
+                    'x-rapidapi-key': API_KEY || '',
+                },
+            });
             if (!res.ok) return;
 
             const data = await res.json();

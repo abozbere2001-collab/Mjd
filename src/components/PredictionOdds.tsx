@@ -8,6 +8,9 @@ import { Skeleton } from './ui/skeleton';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 
+const API_FOOTBALL_HOST = 'v3.football.api-sports.io';
+const API_KEY = process.env.NEXT_PUBLIC_API_FOOTBALL_KEY;
+
 interface OddValue {
     value: string;
     odd: string;
@@ -58,7 +61,12 @@ export function PredictionOdds({ fixtureId, homeTeam, awayTeam, reversed = false
         let isMounted = true;
         setLoading(true);
 
-        fetch(`/api/football/odds?fixture=${fixtureId}&bookmaker=8`) // Bet365
+        fetch(`https://${API_FOOTBALL_HOST}/odds?fixture=${fixtureId}&bookmaker=8`, {
+             headers: {
+                'x-rapidapi-host': API_FOOTBALL_HOST,
+                'x-rapidapi-key': API_KEY || '',
+            },
+        }) // Bet365
         .then(async (res) => {
             if (!isMounted) return;
             if (!res.ok) {
