@@ -215,22 +215,15 @@ export function AppContentWrapper({ showHints, onHintsDismissed }: { showHints: 
   }, [fetchCustomNames]);
   
  const handleSetFavorites = useCallback((updater: React.SetStateAction<Partial<Favorites>>) => {
-    let newFavorites: Partial<Favorites>;
-    
-    // The updater function from React's setState can be complex.
-    // We first resolve what the new state should be.
     setFavorites(currentFavorites => {
-        if (typeof updater === 'function') {
-            newFavorites = updater(currentFavorites);
-        } else {
-            newFavorites = updater;
-        }
+        const newFavorites = typeof updater === 'function' ? updater(currentFavorites) : updater;
 
-        // Now that we have the resolved new state, perform side effects.
         if (!user || user.isAnonymous) {
             setLocalFavorites(newFavorites);
         } else if (db) {
             const favDocRef = doc(db, 'users', user.uid, 'favorites', 'data');
+            // This setDoc should merge the entire new favorites object.
+            // Be cautious if you only want to update a single field.
             setDoc(favDocRef, newFavorites, { merge: true }).catch(err => {
                 console.error("Firestore update failed:", err);
                 errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -241,7 +234,6 @@ export function AppContentWrapper({ showHints, onHintsDismissed }: { showHints: 
             });
         }
         
-        // Return the new state for React to render.
         return newFavorites;
     });
 }, [user, db]);
