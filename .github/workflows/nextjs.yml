@@ -79,20 +79,21 @@ jobs:
       
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          build-tools-version: "29.0.3"
 
       - name: Build Release APK
         run: cd android && ./gradlew assembleRelease
 
       - name: Sign Release APK
         id: sign_app
-        uses: r0adkll/sign-android-release@v1.1.0
+        uses: r0adkll/sign-android-release@v1
         with:
           releaseDirectory: android/app/build/outputs/apk/release
           signingKeyBase64: ${{ secrets.ANDROID_SIGNING_KEY }}
           alias: ${{ secrets.ANDROID_ALIAS }}
           keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           keyPassword: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          buildToolsVersion: "33.0.2"
 
       - name: Upload Signed APK artifact
         uses: actions/upload-artifact@v4
