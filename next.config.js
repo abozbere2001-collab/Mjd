@@ -3,7 +3,9 @@ const withPWA = require('next-pwa');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
+  output: 'export',
+  basePath: process.env.NODE_ENV === 'production' ? '/H' : '',
+  assetPrefix: process.env.NODE_ENV === 'production' ? '/H/' : '',
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -11,6 +13,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
@@ -57,10 +60,6 @@ const pwaConfig = {
   skipWaiting: true,
 };
 
-// Only wrap with PWA in production
-const config = process.env.NODE_ENV === 'production' 
-  ? withPWA(pwaConfig)(nextConfig) 
-  : nextConfig;
-
+const config = withPWA(pwaConfig)(nextConfig);
 
 module.exports = config;
