@@ -68,7 +68,7 @@ jobs:
       - name: Add Android platform to Capacitor
         run: npx cap add android
 
-      - name: Sync Capacitor project
+      - name": "Sync Capacitor project"
         run: npx cap sync
 
       - name: Set up JDK
@@ -79,22 +79,19 @@ jobs:
       
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-        with:
-          build-tools: 29.0.3
 
       - name: Build Release APK
         run: cd android && ./gradlew assembleRelease
 
       - name: Sign Release APK
         id: sign_app
-        uses: r0adkll/sign-android-release@v1
-        with:
-          releaseDirectory: android/app/build/outputs/apk/release
-          signingKeyBase64: ${{ secrets.ANDROID_SIGNING_KEY }}
-          alias: ${{ secrets.ANDROID_ALIAS }}
-          keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          keyPassword: ${{ secrets.ANDROID_KEY_PASSWORD }}
-
+        run: |
+          echo "${{ secrets.ANDROID_SIGNING_KEY }}" | base64 --decode > release.keystore
+          find android/app/build/outputs/apk/release -name "*.apk" | while read apk; do
+            /usr/bin/sudo $ANDROID_HOME/build-tools/33.0.2/apksigner sign --ks release.keystore --ks-key-alias ${{ secrets.ANDROID_ALIAS }} --ks-pass pass:${{ secrets.ANDROID_KEYSTORE_PASSWORD }} --key-pass pass:${{ secrets.ANDROID_KEY_PASSWORD }} $apk
+            echo "signedReleaseFile=$apk" >> $GITHUB_OUTPUT
+          done
+        
       - name: Upload Signed APK artifact
         uses: actions/upload-artifact@v4
         with:
