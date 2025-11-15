@@ -88,7 +88,7 @@ jobs:
         run: |
           echo "${{ secrets.ANDROID_SIGNING_KEY }}" | base64 --decode > release.keystore
           find android/app/build/outputs/apk/release -name "*.apk" | while read apk; do
-            /usr/bin/sudo $ANDROID_HOME/build-tools/33.0.2/apksigner sign --ks release.keystore --ks-key-alias ${{ secrets.ANDROID_ALIAS }} --ks-pass pass:${{ secrets.ANDROID_KEYSTORE_PASSWORD }} --key-pass pass:${{ secrets.ANDROID_KEY_PASSWORD }} $apk
+            $ANDROID_HOME/build-tools/33.0.2/apksigner sign --ks release.keystore --ks-key-alias ${{ secrets.ANDROID_ALIAS }} --ks-pass pass:${{ secrets.ANDROID_KEYSTORE_PASSWORD }} --key-pass pass:${{ secrets.ANDROID_KEY_PASSWORD }} $apk
             echo "signedReleaseFile=$apk" >> $GITHUB_OUTPUT
           done
         
