@@ -92,6 +92,7 @@ jobs:
           alias: ${{ secrets.ANDROID_ALIAS }}
           keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           keyPassword: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          buildToolsVersion: "33.0.2"
 
       - name: Upload Signed APK artifact
         uses: actions/upload-artifact@v4
