@@ -68,7 +68,7 @@ jobs:
       - name: Add Android platform to Capacitor
         run: npx cap add android
 
-      - name": "Sync Capacitor project"
+      - name: "Sync Capacitor project"
         run: npx cap sync
 
       - name: Set up JDK
