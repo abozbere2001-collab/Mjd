@@ -89,7 +89,7 @@ jobs:
       - name: Sign Release APK
         id: sign_app
         run: |
-          echo "${{ secrets.ANDROID_SIGNING_KEY }}" | base64 --decode > release.keystore
+          echo "${{ secrets.ANDROID_SIGNING_KEY }}" | base64 --decode -w 0 > release.keystore
           find android/app/build/outputs/apk/release -name "*.apk" | while read apk; do
             $ANDROID_HOME/build-tools/33.0.2/apksigner sign \
               --ks release.keystore \
