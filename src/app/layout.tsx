@@ -4,7 +4,9 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from '@/components/theme-provider';
 import { Cairo } from 'next/font/google';
-import { FirebaseClientProvider } from '@/firebase';
+import React from 'react';
+import { ClientLayout } from './client-layout';
+
 
 export const metadata: Metadata = {
   title: 'نبض الملاعب',
@@ -18,11 +20,13 @@ const cairo = Cairo({
   variable: '--font-cairo',
 });
 
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
         <body className={`${cairo.variable} font-body antialiased`}>
@@ -33,9 +37,9 @@ export default function RootLayout({
                 disableTransitionOnChange
                 themes={['light', 'dark']}
             >
-              <FirebaseClientProvider>
+              <ClientLayout>
                 {children}
-              </FirebaseClientProvider>
+              </ClientLayout>
               <Toaster />
             </ThemeProvider>
         </body>
