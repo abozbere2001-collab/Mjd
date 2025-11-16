@@ -5,10 +5,6 @@ const config: CapacitorConfig = {
   appId: 'com.nabd.malaeb',
   appName: 'نبض الملاعب',
   webDir: 'out',
-  server: {
-    androidScheme: 'https',
-    hostname: 'com.nabd.malaeb'
-  },
   plugins: {
     FirebaseAuthentication: {
       skipNativeAuth: false,
