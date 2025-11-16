@@ -19,6 +19,13 @@ export function WelcomeScreen() {
   useEffect(() => {
     const handleRedirect = async () => {
       if (!db) return;
+      // Check if this is the result of a redirect
+      const isRedirect = sessionStorage.getItem('firebase_redirect_pending');
+      if (!isRedirect) {
+          return;
+      }
+      sessionStorage.removeItem('firebase_redirect_pending');
+
       setIsLoading('redirect');
       try {
         await handleGoogleRedirectResult(db);
@@ -45,6 +52,8 @@ export function WelcomeScreen() {
         return;
     }
     setIsLoading('google');
+    // Set a flag to indicate that a redirect is about to happen
+    sessionStorage.setItem('firebase_redirect_pending', 'true');
     await initiateGoogleSignInRedirect();
   };
 
