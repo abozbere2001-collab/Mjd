@@ -163,11 +163,7 @@ export function AllCompetitionsScreen({ navigate, goBack, canGoBack, favorites, 
         toast({ title: 'جاري جلب بيانات البطولات...', description: 'قد تستغرق هذه العملية دقيقة في المرة الأولى.' });
         
         try {
-            const res = await fetch(`https://${API_FOOTBALL_HOST}/leagues`, {
-                headers: {
-                    'x-rapidapi-host': API_FOOTBALL_HOST,
-                    'x-rapidapi-key': API_KEY || '',
-                },
+            const res = await fetch(`/api/football/leagues`, {
             });
             if (!res.ok) throw new Error("Failed to fetch leagues");
             const data = await res.json();
@@ -241,11 +237,7 @@ export function AllCompetitionsScreen({ navigate, goBack, canGoBack, favorites, 
         toast({ title: 'جاري جلب بيانات المنتخبات...', description: 'قد تستغرق هذه العملية دقيقة في المرة الأولى.' });
     
         try {
-            const res = await fetch(`https://${API_FOOTBALL_HOST}/teams?country=`, {
-                headers: {
-                    'x-rapidapi-host': API_FOOTBALL_HOST,
-                    'x-rapidapi-key': API_KEY || '',
-                },
+            const res = await fetch(`/api/football/teams?country=`, {
             });
             if(!res.ok) throw new Error("Failed to fetch teams");
 

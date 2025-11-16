@@ -233,12 +233,7 @@ export function SearchSheet({ children, navigate, initialItemType, favorites, cu
             });
             
             if(matchedTeamIds.length > 0) {
-                const teamPromises = matchedTeamIds.map(id => fetch(`https://${API_FOOTBALL_HOST}/teams?id=${id}`, {
-                     headers: {
-                        'x-rapidapi-host': API_FOOTBALL_HOST,
-                        'x-rapidapi-key': API_KEY || '',
-                    },
-                }).then(res => res.json()));
+                const teamPromises = matchedTeamIds.map(id => fetch(`/api/football/teams?id=${id}`).then(res => res.json()));
                 const teamResults = await Promise.all(teamPromises);
                 teamResults.forEach(data => {
                     if (data.response?.[0]) {
@@ -266,18 +261,8 @@ export function SearchSheet({ children, navigate, initialItemType, favorites, cu
 
     // 3. Search API for additional results
     const apiSearchPromises = [
-      fetch(`https://${API_FOOTBALL_HOST}/teams?search=${encodeURIComponent(query)}`, {
-         headers: {
-            'x-rapidapi-host': API_FOOTBALL_HOST,
-            'x-rapidapi-key': API_KEY || '',
-        },
-      }).then(res => res.ok ? res.json() : { response: [] }),
-      fetch(`https://${API_FOOTBALL_HOST}/leagues?search=${encodeURIComponent(query)}`, {
-         headers: {
-            'x-rapidapi-host': API_FOOTBALL_HOST,
-            'x-rapidapi-key': API_KEY || '',
-        },
-      }).then(res => res.ok ? res.json() : { response: [] })
+      fetch(`/api/football/teams?search=${encodeURIComponent(query)}`).then(res => res.ok ? res.json() : { response: [] }),
+      fetch(`/api/football/leagues?search=${encodeURIComponent(query)}`).then(res => res.ok ? res.json() : { response: [] })
     ];
     
     try {
