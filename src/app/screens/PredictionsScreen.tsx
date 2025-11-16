@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
@@ -26,6 +25,8 @@ import { ar } from 'date-fns/locale';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+const API_FOOTBALL_HOST = 'v3.football.api-sports.io';
+const API_KEY = process.env.NEXT_PUBLIC_API_FOOTBALL_KEY;
 
 const calculatePoints = (prediction: Prediction, fixture: Fixture): number => {
   if (!['FT', 'AET', 'PEN'].includes(fixture.fixture.status.short)) {
@@ -367,7 +368,12 @@ export function PredictionsScreen({ navigate, goBack, canGoBack, favorites, cust
             }
 
             const fixtureIds = pinnedFixturesSnapshot.docs.map(doc => doc.id);
-            const apiFixturePromises = fixtureIds.map(id => fetch(`/api/football/fixtures?id=${id}`).then(res => res.json()));
+            const apiFixturePromises = fixtureIds.map(id => fetch(`https://${API_FOOTBALL_HOST}/fixtures?id=${id}`, {
+                headers: {
+                    'x-rapidapi-host': API_FOOTBALL_HOST,
+                    'x-rapidapi-key': API_KEY || '',
+                },
+            }).then(res => res.json()));
             const apiFixtureResults = await Promise.all(apiFixturePromises);
             
             const liveFixturesMap = new Map<number, Fixture>();
@@ -552,3 +558,5 @@ export function PredictionsScreen({ navigate, goBack, canGoBack, favorites, cust
         </div>
     );
 }
+
+    

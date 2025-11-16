@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
@@ -45,6 +44,9 @@ import { getLocalFavorites, setLocalFavorites } from '@/lib/local-favorites';
 import { format, isToday } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { POPULAR_LEAGUES, POPULAR_TEAMS } from '@/lib/popular-data';
+
+const API_FOOTBALL_HOST = 'v3.football.api-sports.io';
+const API_KEY = process.env.NEXT_PUBLIC_API_FOOTBALL_KEY;
 
 type RenameType = 'league' | 'team' | 'player' | 'continent' | 'country' | 'coach' | 'status' | 'crown';
 interface RenameState {
@@ -129,11 +131,16 @@ export function CompetitionDetailScreen({ navigate, goBack, canGoBack, title: in
         setLoading(true);
         
         try {
+            const headers = {
+                'x-rapidapi-host': API_FOOTBALL_HOST,
+                'x-rapidapi-key': API_KEY || '',
+            };
+
             const [standingsRes, scorersRes, fixturesRes, teamsRes] = await Promise.all([
-                fetch(`/api/football/standings?league=${leagueId}&season=${season}`),
-                fetch(`/api/football/players/topscorers?league=${leagueId}&season=${season}`),
-                fetch(`/api/football/fixtures?league=${leagueId}&season=${season}`),
-                fetch(`/api/football/teams?league=${leagueId}&season=${season}`)
+                fetch(`https://${API_FOOTBALL_HOST}/standings?league=${leagueId}&season=${season}`, { headers }),
+                fetch(`https://${API_FOOTBALL_HOST}/players/topscorers?league=${leagueId}&season=${season}`, { headers }),
+                fetch(`https://${API_FOOTBALL_HOST}/fixtures?league=${leagueId}&season=${season}`, { headers }),
+                fetch(`https://${API_FOOTBALL_HOST}/teams?league=${leagueId}&season=${season}`, { headers })
             ]);
 
             if (!isMounted) return;
@@ -629,11 +636,3 @@ const getDisplayName = useCallback((type: 'team' | 'player' | 'league', id: numb
 }
 
     
-
-    
-
-
-
-
-    
-

@@ -312,9 +312,13 @@ export function MatchesScreen({ navigate, goBack, canGoBack, isVisible, favorite
         setLoading(true);
 
         try {
-            const res = await fetch(`/api/football/fixtures?date=${dateKey}`, { 
-                signal: abortSignal
-             });
+             const res = await fetch(`https://${API_FOOTBALL_HOST}/fixtures?date=${dateKey}`, {
+                signal: abortSignal,
+                headers: {
+                    'x-rapidapi-host': API_FOOTBALL_HOST,
+                    'x-rapidapi-key': API_KEY || '',
+                },
+            });
             if (!res.ok) throw new Error(`API fetch failed with status ${res.status}`);
             
             const data = await res.json();
@@ -354,8 +358,12 @@ export function MatchesScreen({ navigate, goBack, canGoBack, isVisible, favorite
         if (liveFixtureIds.length === 0) return;
         
         try {
-            const res = await fetch(`/api/football/fixtures?ids=${liveFixtureIds.join('-')}`, { 
+            const res = await fetch(`https://${API_FOOTBALL_HOST}/fixtures?ids=${liveFixtureIds.join('-')}`, {
                 signal: abortSignal,
+                headers: {
+                    'x-rapidapi-host': API_FOOTBALL_HOST,
+                    'x-rapidapi-key': API_KEY || '',
+                },
             });
             if (!res.ok) return;
 
@@ -469,3 +477,5 @@ export function MatchesScreen({ navigate, goBack, canGoBack, isVisible, favorite
     </div>
   );
 }
+
+    
