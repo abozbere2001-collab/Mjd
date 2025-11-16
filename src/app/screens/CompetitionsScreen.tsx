@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
@@ -9,12 +8,13 @@ import type { ScreenProps } from '@/app/page';
 import { Button } from '@/components/ui/button';
 import { useAuth, useFirestore } from '@/firebase/provider';
 import type { Favorites } from '@/lib/types';
-import { SearchSheet } from '@/components/SearchSheet';
+import { SearchSheet, SearchableItem } from '@/components/SearchSheet';
 import { ProfileButton } from '../AppContentWrapper';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { hardcodedTranslations } from '@/lib/hardcoded-translations';
+import { POPULAR_LEAGUES, POPULAR_TEAMS } from '@/lib/popular-data';
 
 // --- MAIN SCREEN COMPONENT ---
 export function CompetitionsScreen({ navigate, goBack, canGoBack, favorites, customNames, setFavorites }: ScreenProps & {setFavorites: (favorites: Partial<Favorites>) => void}) {
@@ -58,6 +58,27 @@ export function CompetitionsScreen({ navigate, goBack, canGoBack, favorites, cus
             (window as any).appNavigate('Welcome');
         }
     }
+    
+    const popularItemsForSearch = useMemo((): SearchableItem[] => {
+        if (!customNames) return [];
+        const seen = new Set<string>();
+        
+        return [...POPULAR_TEAMS, ...POPULAR_LEAGUES].map(item => {
+            const type = 'national' in item || 'type' in item ? 'teams' : 'leagues';
+            const key = `${type}-${item.id}`;
+            if (seen.has(key)) return null;
+            seen.add(key);
+    
+            return {
+                id: item.id,
+                type: type as 'teams' | 'leagues',
+                name: getDisplayName(type.slice(0, -1) as 'team' | 'league', item.id, item.name),
+                originalName: item.name,
+                logo: item.logo,
+                originalItem: item as any,
+            };
+        }).filter(Boolean) as SearchableItem[];
+    }, [customNames, getDisplayName]);
 
     if (!favorites || !customNames) {
         // You can return a loading spinner here if you want
@@ -72,7 +93,7 @@ export function CompetitionsScreen({ navigate, goBack, canGoBack, favorites, cus
                 canGoBack={canGoBack} 
                 actions={
                   <div className="flex items-center gap-1">
-                      <SearchSheet navigate={navigate} favorites={favorites} customNames={customNames} setFavorites={setFavorites}>
+                      <SearchSheet navigate={navigate} favorites={favorites} customNames={customNames} setFavorites={setFavorites} popularItems={popularItemsForSearch}>
                           <Button variant="ghost" size="icon" className="h-7 w-7">
                               <Search className="h-5 w-5" />
                           </Button>
@@ -87,7 +108,7 @@ export function CompetitionsScreen({ navigate, goBack, canGoBack, favorites, cus
                         <ScrollArea className="w-full whitespace-nowrap">
                             <div className="flex w-max space-x-4 px-4 flex-row-reverse">
                                  <div className="flex flex-col items-center gap-2 w-20 h-[84px] text-center">
-                                      <SearchSheet navigate={navigate} initialItemType="teams" favorites={favorites} customNames={customNames} setFavorites={setFavorites}>
+                                      <SearchSheet navigate={navigate} initialItemType="teams" favorites={favorites} customNames={customNames} setFavorites={setFavorites} popularItems={popularItemsForSearch}>
                                         <div className="flex flex-col items-center justify-center h-14 w-14 bg-card rounded-full cursor-pointer hover:bg-accent/50 transition-colors">
                                             <Plus className="h-6 w-6 text-primary" />
                                         </div>
@@ -120,7 +141,7 @@ export function CompetitionsScreen({ navigate, goBack, canGoBack, favorites, cus
                             <TabsContent value="teams" className="mt-4 px-3">
                                 <div className="grid grid-cols-4 gap-4">
                                      <div className="h-[76px] w-full">
-                                         <SearchSheet navigate={navigate} initialItemType="teams" favorites={favorites} customNames={customNames} setFavorites={setFavorites}>
+                                         <SearchSheet navigate={navigate} initialItemType="teams" favorites={favorites} customNames={customNames} setFavorites={setFavorites} popularItems={popularItemsForSearch}>
                                             <div className="flex flex-col items-center justify-center gap-2 text-center p-2 rounded-2xl border-2 border-dashed border-muted-foreground/50 h-full w-full cursor-pointer hover:bg-accent/50 transition-colors">
                                                 <div className="flex items-center justify-center h-10 w-10 bg-primary/10 rounded-full">
                                                     <Plus className="h-6 w-6 text-primary" />
@@ -144,7 +165,7 @@ export function CompetitionsScreen({ navigate, goBack, canGoBack, favorites, cus
                             <TabsContent value="competitions" className="mt-4 px-3">
                                 <div className="grid grid-cols-4 gap-4">
                                     <div className="h-[76px] w-full">
-                                        <SearchSheet navigate={navigate} initialItemType="leagues" favorites={favorites} customNames={customNames} setFavorites={setFavorites}>
+                                        <SearchSheet navigate={navigate} initialItemType="leagues" favorites={favorites} customNames={customNames} setFavorites={setFavorites} popularItems={popularItemsForSearch}>
                                             <div className="flex flex-col items-center justify-center gap-2 text-center p-2 rounded-2xl border-2 border-dashed border-muted-foreground/50 h-full w-full cursor-pointer hover:bg-accent/50 transition-colors">
                                                 <div className="flex items-center justify-center h-10 w-10 bg-primary/10 rounded-full">
                                                     <Plus className="h-6 w-6 text-primary" />
@@ -168,7 +189,7 @@ export function CompetitionsScreen({ navigate, goBack, canGoBack, favorites, cus
                             <TabsContent value="players" className="mt-4 px-3">
                                 <div className="grid grid-cols-4 gap-4">
                                      <div className="h-[76px] w-full">
-                                        <SearchSheet navigate={navigate} initialItemType="teams" favorites={favorites} customNames={customNames} setFavorites={setFavorites}>
+                                        <SearchSheet navigate={navigate} initialItemType="teams" favorites={favorites} customNames={customNames} setFavorites={setFavorites} popularItems={popularItemsForSearch}>
                                             <div className="flex flex-col items-center justify-center gap-2 text-center p-2 rounded-2xl border-2 border-dashed border-muted-foreground/50 h-full w-full cursor-pointer hover:bg-accent/50 transition-colors">
                                                 <div className="flex items-center justify-center h-10 w-10 bg-primary/10 rounded-full">
                                                     <Plus className="h-6 w-6 text-primary" />

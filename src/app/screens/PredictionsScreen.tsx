@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProfileButton } from '../AppContentWrapper';
 import { Button } from '@/components/ui/button';
 import { Crown, Search, X, Loader2, Trophy, BarChart, Users as UsersIcon, RefreshCw, CalendarDays, ThumbsUp, ChevronLeft, ChevronRight } from 'lucide-react';
-import { SearchSheet } from '@/components/SearchSheet';
+import { SearchSheet, SearchableItem } from '@/components/SearchSheet';
 import { useAdmin, useAuth, useFirestore } from '@/firebase';
 import type { CrownedTeam, Favorites, Fixture, Standing, TopScorer, Prediction, Team, Player, UserScore, PredictionMatch, UserProfile } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -24,6 +24,8 @@ import { format, addDays, subDays, isToday, isYesterday, isTomorrow } from 'date
 import { ar } from 'date-fns/locale';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { POPULAR_LEAGUES, POPULAR_TEAMS } from '@/lib/popular-data';
+import { hardcodedTranslations } from '@/lib/hardcoded-translations';
 
 const API_FOOTBALL_HOST = 'v3.football.api-sports.io';
 const API_KEY = process.env.NEXT_PUBLIC_API_FOOTBALL_KEY;
@@ -221,6 +223,19 @@ export function PredictionsScreen({ navigate, goBack, canGoBack, favorites, cust
 
     const [selectedDateKey, setSelectedDateKey] = useState<string>(formatDateKey(new Date()));
     const [isUpdatingPoints, setIsUpdatingPoints] = useState(false);
+
+    const getDisplayName = React.useCallback((type: 'team' | 'league', id: number, defaultName: string) => {
+        if (!customNames) return defaultName;
+        const firestoreMap = type === 'team' ? customNames?.teams : customNames?.leagues;
+        const customName = firestoreMap?.get(id);
+        if (customName) return customName;
+    
+        const hardcodedMap = type === 'team' ? hardcodedTranslations.teams : hardcodedTranslations.leagues;
+        const hardcodedName = hardcodedMap[id as any];
+        if(hardcodedName) return hardcodedName;
+    
+        return defaultName;
+    }, [customNames]);
 
     useEffect(() => {
         if (isCheckingAdmin) return;
@@ -487,6 +502,27 @@ export function PredictionsScreen({ navigate, goBack, canGoBack, favorites, cust
         }).sort((a,b) => a.fixtureData.fixture.timestamp - b.fixtureData.fixture.timestamp);
     }, [pinnedMatches, selectedDateKey]);
 
+    const popularItemsForSearch = useMemo((): SearchableItem[] => {
+        if (!customNames) return [];
+        const seen = new Set<string>();
+        
+        return [...POPULAR_TEAMS, ...POPULAR_LEAGUES].map(item => {
+            const type = 'national' in item || 'type' in item ? 'teams' : 'leagues';
+            const key = `${type}-${item.id}`;
+            if (seen.has(key)) return null;
+            seen.add(key);
+    
+            return {
+                id: item.id,
+                type: type as 'teams' | 'leagues',
+                name: getDisplayName(type.slice(0, -1) as 'team' | 'league', item.id, item.name),
+                originalName: item.name,
+                logo: item.logo,
+                originalItem: item as any,
+            };
+        }).filter(Boolean) as SearchableItem[];
+    }, [customNames, getDisplayName]);
+
     return (
         <div className="flex h-full flex-col bg-background">
             <ScreenHeader
@@ -495,7 +531,7 @@ export function PredictionsScreen({ navigate, goBack, canGoBack, favorites, cust
                 canGoBack={canGoBack}
                 actions={
                   <div className="flex items-center gap-1">
-                      <SearchSheet navigate={navigate} favorites={favorites} customNames={customNames} setFavorites={setFavorites}>
+                      <SearchSheet navigate={navigate} favorites={favorites} customNames={customNames} setFavorites={setFavorites} popularItems={popularItemsForSearch}>
                           <Button variant="ghost" size="icon">
                               <Search className="h-5 w-5" />
                           </Button>
@@ -558,5 +594,3 @@ export function PredictionsScreen({ navigate, goBack, canGoBack, favorites, cust
         </div>
     );
 }
-
-    

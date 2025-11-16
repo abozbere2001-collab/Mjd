@@ -1,8 +1,7 @@
 
-
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, LogOut, User, Search, Trophy, Settings as SettingsIcon, FileText, FileBadge } from 'lucide-react';
@@ -19,9 +18,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { SearchSheet } from '@/components/SearchSheet';
+} from "@/components/ui/alert-dialog";
+import { SearchSheet, SearchableItem } from '@/components/SearchSheet';
 import { ProfileButton } from '../AppContentWrapper';
+import { POPULAR_LEAGUES, POPULAR_TEAMS } from '@/lib/popular-data';
+import { hardcodedTranslations } from '@/lib/hardcoded-translations';
 
 export function SettingsScreen({ navigate, goBack, canGoBack, favorites, customNames, setFavorites }: ScreenProps & {setFavorites: (favorites: any) => void}) {
   const { toast } = useToast();
@@ -54,6 +55,40 @@ export function SettingsScreen({ navigate, goBack, canGoBack, favorites, customN
     }
   };
 
+  const getDisplayName = React.useCallback((type: 'team' | 'league', id: number, defaultName: string) => {
+    if (!customNames) return defaultName;
+    const firestoreMap = type === 'team' ? customNames?.teams : customNames?.leagues;
+    const customName = firestoreMap?.get(id);
+    if (customName) return customName;
+
+    const hardcodedMap = type === 'team' ? hardcodedTranslations.teams : hardcodedTranslations.leagues;
+    const hardcodedName = hardcodedMap[id as any];
+    if(hardcodedName) return hardcodedName;
+
+    return defaultName;
+  }, [customNames]);
+  
+  const popularItemsForSearch = useMemo((): SearchableItem[] => {
+    if (!customNames) return [];
+    const seen = new Set<string>();
+    
+    return [...POPULAR_TEAMS, ...POPULAR_LEAGUES].map(item => {
+        const type = 'national' in item || 'type' in item ? 'teams' : 'leagues';
+        const key = `${type}-${item.id}`;
+        if (seen.has(key)) return null;
+        seen.add(key);
+
+        return {
+            id: item.id,
+            type: type as 'teams' | 'leagues',
+            name: getDisplayName(type.slice(0, -1) as 'team' | 'league', item.id, item.name),
+            originalName: item.name,
+            logo: item.logo,
+            originalItem: item as any,
+        };
+    }).filter(Boolean) as SearchableItem[];
+  }, [customNames, getDisplayName]);
+
   return (
     <div className="flex h-full flex-col bg-background">
       <ScreenHeader 
@@ -62,7 +97,7 @@ export function SettingsScreen({ navigate, goBack, canGoBack, favorites, customN
         canGoBack={canGoBack} 
         actions={
           <div className="flex items-center gap-1">
-              <SearchSheet navigate={navigate} favorites={favorites} customNames={customNames} setFavorites={setFavorites}>
+              <SearchSheet navigate={navigate} favorites={favorites} customNames={customNames} setFavorites={setFavorites} popularItems={popularItemsForSearch}>
                   <Button variant="ghost" size="icon">
                       <Search className="h-5 w-5" />
                   </Button>

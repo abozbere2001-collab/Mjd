@@ -14,12 +14,12 @@ import { cn } from '@/lib/utils';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { Button } from '@/components/ui/button';
-import { SearchSheet } from '@/components/SearchSheet';
+import { SearchSheet, SearchableItem } from '@/components/SearchSheet';
 import { ProfileButton } from '../AppContentWrapper';
 import type { Fixture as FixtureType, Favorites, PredictionMatch } from '@/lib/types';
 import { FixtureItem } from '@/components/FixtureItem';
 import { hardcodedTranslations } from '@/lib/hardcoded-translations';
-import { POPULAR_LEAGUES } from '@/lib/popular-data';
+import { POPULAR_LEAGUES, POPULAR_TEAMS } from '@/lib/popular-data';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { PredictionOdds } from '@/components/PredictionOdds';
@@ -428,6 +428,26 @@ export function MatchesScreen({ navigate, goBack, canGoBack, isVisible, favorite
   
   const allFixturesForDay = matchesCache.get(selectedDateKey) || [];
 
+    const popularItemsForSearch = useMemo((): SearchableItem[] => {
+        if (!customNames) return [];
+        const seen = new Set<string>();
+        
+        return [...POPULAR_TEAMS, ...POPULAR_LEAGUES].map(item => {
+            const type = 'national' in item || 'type' in item ? 'teams' : 'leagues';
+            const key = `${type}-${item.id}`;
+            if (seen.has(key)) return null;
+            seen.add(key);
+    
+            return {
+                id: item.id,
+                type: type as 'teams' | 'leagues',
+                name: getDisplayName(type.slice(0, -1) as 'team' | 'league', item.id, item.name),
+                originalName: item.name,
+                logo: item.logo,
+                originalItem: item as any,
+            };
+        }).filter(Boolean) as SearchableItem[];
+    }, [customNames, getDisplayName]);
     
   return (
     <div className="flex h-full flex-col bg-background">
@@ -443,7 +463,7 @@ export function MatchesScreen({ navigate, goBack, canGoBack, isVisible, favorite
                   >
                     <span className="text-xs font-mono select-none">1x2</span>
                   </div>
-                  <SearchSheet navigate={navigate} favorites={favorites} customNames={customNames} setFavorites={setFavorites} onCustomNameChange={onCustomNameChange}>
+                  <SearchSheet navigate={navigate} favorites={favorites} customNames={customNames} setFavorites={setFavorites} onCustomNameChange={onCustomNameChange} popularItems={popularItemsForSearch}>
                       <Button variant="ghost" size="icon" className="h-7 w-7">
                           <Search className="h-5 w-5" />
                       </Button>
@@ -478,4 +498,3 @@ export function MatchesScreen({ navigate, goBack, canGoBack, isVisible, favorite
   );
 }
 
-    
