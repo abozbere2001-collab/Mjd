@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -237,10 +238,11 @@ export function SeasonPlayerSelectionScreen({ navigate, goBack, canGoBack, heade
             <div className="flex-1 overflow-y-auto">
                 {players.length > 0 ? (
                      <List
-                        height={window.innerHeight - (showSaveButton ? 220 : 150)}
+                        height={500} // A fallback height
                         itemCount={players.length}
                         itemSize={76} // The height of each PlayerListItem + padding
                         width="100%"
+                        className="w-full h-full"
                     >
                         {Row}
                     </List>
@@ -260,4 +262,3 @@ export function SeasonPlayerSelectionScreen({ navigate, goBack, canGoBack, heade
     );
 }
 
-    

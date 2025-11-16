@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -215,10 +216,11 @@ export function SeasonTeamSelectionScreen({ navigate, goBack, canGoBack, headerA
             <div className="flex-1 overflow-y-auto">
                 {teams.length > 0 ? (
                      <List
-                        height={window.innerHeight - (showSaveButton ? 220 : 150)}
+                        height={500} // A fallback height
                         itemCount={teams.length}
                         itemSize={68}
                         width="100%"
+                        className="w-full h-full"
                     >
                         {Row}
                     </List>
@@ -238,4 +240,3 @@ export function SeasonTeamSelectionScreen({ navigate, goBack, canGoBack, headerA
     );
 }
 
-    

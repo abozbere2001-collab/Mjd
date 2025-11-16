@@ -435,6 +435,7 @@ export function TeamDetailScreen({ navigate, goBack, canGoBack, teamId, leagueId
     const { toast } = useToast();
     const [teamData, setTeamData] = useState<TeamData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [renameItem, setRenameItem] = useState<{ id: number; name: string; note?: string; type: 'team' | 'crown'; purpose: 'rename' | 'crown' | 'note'; originalData: any; originalName?: string; } | null>(null);
     const [pinnedPredictionMatches, setPinnedPredictionMatches] = useState(new Set<number>());
     const [activeTab, setActiveTab] = useState('details');
@@ -446,6 +447,7 @@ export function TeamDetailScreen({ navigate, goBack, canGoBack, teamId, leagueId
 
         const getTeamInfo = async () => {
             setLoading(true);
+            setError(null);
             try {
                 const teamRes = await fetch(`https://${API_FOOTBALL_HOST}/teams?id=${teamId}`, {
                      headers: {
@@ -453,7 +455,10 @@ export function TeamDetailScreen({ navigate, goBack, canGoBack, teamId, leagueId
                         'x-rapidapi-key': API_KEY || '',
                     },
                 });
-                if (!teamRes.ok) throw new Error("Team API fetch failed");
+                if (!teamRes.ok) {
+                    if (teamRes.status === 404) throw new Error("Team not found in API response");
+                    throw new Error("Team API fetch failed");
+                }
                 
                 const data = await teamRes.json();
                 if (isMounted) {
@@ -464,9 +469,11 @@ export function TeamDetailScreen({ navigate, goBack, canGoBack, teamId, leagueId
                          throw new Error("Team not found in API response");
                     }
                 }
-            } catch (error) {
-                console.error("Error fetching team info:", error);
-                if (isMounted) toast({ variant: 'destructive', title: 'خطأ', description: 'فشل في تحميل بيانات الفريق.' });
+            } catch (err: any) {
+                console.error("Error fetching team info:", err);
+                if (isMounted) {
+                    setError(err.message || 'فشل في تحميل بيانات الفريق.');
+                }
             } finally {
                 if (isMounted) setLoading(false);
             }
@@ -487,7 +494,7 @@ export function TeamDetailScreen({ navigate, goBack, canGoBack, teamId, leagueId
             isMounted = false;
             if(predictionsUnsub) predictionsUnsub();
         };
-    }, [teamId, db, toast]);
+    }, [teamId, db]);
 
 
     const handlePinToggle = useCallback((fixture: Fixture) => {
@@ -540,7 +547,7 @@ export function TeamDetailScreen({ navigate, goBack, canGoBack, teamId, leagueId
     }, [customNames]);
 
 
-    if(loading || !teamData || !favorites || !customNames) {
+    if(loading) {
         return (
             <div className="flex h-full flex-col bg-background">
                 <ScreenHeader title="جاري التحميل..." onBack={goBack} canGoBack={canGoBack} />
@@ -550,6 +557,36 @@ export function TeamDetailScreen({ navigate, goBack, canGoBack, teamId, leagueId
                     <div className="mt-4 p-4">
                         <Skeleton className="h-64 w-full" />
                     </div>
+                </div>
+            </div>
+        );
+    }
+    
+    if (error) {
+        return (
+            <div className="flex h-full flex-col bg-background">
+                <ScreenHeader title="خطأ" onBack={goBack} canGoBack={canGoBack} />
+                <div className="flex-1 flex items-center justify-center text-center p-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>حدث خطأ</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-muted-foreground">{error}</p>
+                            <Button onClick={goBack} className="mt-4">العودة</Button>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        );
+    }
+
+    if(!teamData || !favorites || !customNames) {
+        return (
+            <div className="flex h-full flex-col bg-background">
+                <ScreenHeader title="جاري التحميل..." onBack={goBack} canGoBack={canGoBack} />
+                <div className="flex-1 flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin"/>
                 </div>
             </div>
         );
@@ -595,3 +632,4 @@ export function TeamDetailScreen({ navigate, goBack, canGoBack, teamId, leagueId
         </div>
     );
 }
+
