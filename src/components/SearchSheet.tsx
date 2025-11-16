@@ -138,17 +138,19 @@ export function SearchSheet({ children, navigate, initialItemType, favorites, cu
     const normalizedQuery = normalizeArabic(query);
 
     // 1. Search local popular index first
-    popularItems.forEach(item => {
-        const normalizedDisplayName = normalizeArabic(item.name);
-        const normalizedOriginalName = normalizeArabic(item.originalName);
-        if (normalizedDisplayName.includes(normalizedQuery) || normalizedOriginalName.includes(normalizedQuery)) {
-            const key = `${item.type}-${item.id}`;
-            if (!seen.has(key)) {
-                finalResults.push(item);
-                seen.add(key);
+    if(popularItems) {
+        popularItems.forEach(item => {
+            const normalizedDisplayName = normalizeArabic(item.name);
+            const normalizedOriginalName = normalizeArabic(item.originalName);
+            if (normalizedDisplayName.includes(normalizedQuery) || normalizedOriginalName.includes(normalizedQuery)) {
+                const key = `${item.type}-${item.id}`;
+                if (!seen.has(key)) {
+                    finalResults.push(item);
+                    seen.add(key);
+                }
             }
-        }
-    });
+        });
+    }
 
     // 2. Search API for additional results
     const headers = { 'x-rapidapi-host': API_FOOTBALL_HOST, 'x-rapidapi-key': API_KEY || '' };
@@ -308,7 +310,7 @@ export function SearchSheet({ children, navigate, initialItemType, favorites, cu
   };
   
   const renderContent = () => {
-    if (!customNames || !favorites) {
+    if (!customNames || !favorites || !popularItems) {
       return <div className="flex justify-center items-center h-full"><Loader2 className="h-6 w-6 animate-spin" /></div>;
     }
 
@@ -389,4 +391,3 @@ export function SearchSheet({ children, navigate, initialItemType, favorites, cu
     </Sheet>
   );
 }
-
