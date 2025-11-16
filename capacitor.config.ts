@@ -9,7 +9,12 @@ const config: CapacitorConfig = {
     androidScheme: 'https',
     hostname: 'com.nabd.malaeb'
   },
-  plugins: {},
+  plugins: {
+    FirebaseAuthentication: {
+      skipNativeAuth: false,
+      providers: ['google.com'],
+    },
+  },
 };
 
 export default config;

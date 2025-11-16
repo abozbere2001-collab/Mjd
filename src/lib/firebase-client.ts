@@ -6,8 +6,7 @@ import {
   updateProfile,
   type User, 
   getAuth,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithCredential,
   GoogleAuthProvider,
 } from "firebase/auth";
 import { doc, setDoc, getDoc, Firestore, writeBatch, serverTimestamp, updateDoc as firestoreUpdateDoc } from 'firebase/firestore';
@@ -85,26 +84,6 @@ export const handleNewUser = async (user: User, firestore: Firestore) => {
         errorEmitter.emit('permission-error', permissionError);
         console.error("Failed to create new user documents:", error);
     }
-};
-
-export const initiateGoogleSignInRedirect = async () => {
-    const auth = getAuth();
-    const provider = new GoogleAuthProvider();
-    await signInWithRedirect(auth, provider);
-};
-
-export const handleGoogleRedirectResult = async (firestore: Firestore) => {
-    try {
-        const auth = getAuth();
-        const result = await getRedirectResult(auth);
-        if (result && result.user) {
-            await handleNewUser(result.user, firestore);
-            return result.user;
-        }
-    } catch (error) {
-        console.error("Error during Google sign-in redirect:", error);
-    }
-    return null;
 };
 
 
