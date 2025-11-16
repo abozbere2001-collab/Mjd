@@ -4,11 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { NabdAlMalaebLogo } from '@/components/icons/NabdAlMalaebLogo';
 import { GoogleIcon } from '@/components/icons/GoogleIcon';
-import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithCredential, signInWithPopup } from "firebase/auth";
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { handleNewUser } from '@/lib/firebase-client';
+import { Capacitor } from '@capacitor/core';
 
 export const GUEST_MODE_KEY = 'goalstack_guest_mode_active';
 
@@ -20,23 +21,25 @@ export function WelcomeScreen() {
   
   const handleGoogleLogin = async () => {
     if (!db) return;
-    // Clear guest mode when logging in with a real account
     localStorage.removeItem(GUEST_MODE_KEY);
     setIsLoading('google');
     const auth = getAuth();
-    const provider = new GoogleAuthProvider();
+    
     try {
+      // Fallback for web
+      const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       await handleNewUser(result.user, db);
       // onAuthStateChanged will handle the rest
     } catch (error: any) {
-      if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
-        console.error("Google Sign-In Error:", error);
-        toast({
-          variant: 'destructive',
-          title: 'خطأ في تسجيل الدخول',
-          description: 'حدث خطأ أثناء محاولة تسجيل الدخول باستخدام جوجل.',
-        });
+      console.error("Google Sign-In Error:", error);
+      // Don't show toast for user cancellation
+      if (error.message && !error.message.includes("cancelled")) {
+          toast({
+              variant: 'destructive',
+              title: 'خطأ في تسجيل الدخول',
+              description: 'حدث خطأ أثناء محاولة تسجيل الدخول باستخدام جوجل.',
+          });
       }
     } finally {
       setIsLoading(false);
@@ -46,9 +49,7 @@ export function WelcomeScreen() {
   const handleGuestLogin = () => {
     setIsLoading('guest');
     try {
-        // Set a flag in localStorage to indicate guest mode
         localStorage.setItem(GUEST_MODE_KEY, 'true');
-        // Force a page reload to re-evaluate the auth state in the root component
         window.location.reload();
     } catch(e: any) {
         console.error("Guest mode error:", e);
