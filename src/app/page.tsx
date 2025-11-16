@@ -121,11 +121,13 @@ const OnboardingFlow = ({ user, isGuest }: { user: User | null, isGuest: boolean
     }
     
     const onHintsDismissed = useCallback(() => {
-        sessionStorage.setItem(NEW_USER_HINTS_SHOWN_KEY, 'true');
+        if (typeof window !== 'undefined') {
+            sessionStorage.setItem(NEW_USER_HINTS_SHOWN_KEY, 'true');
+        }
     }, []);
     
     const showHints = useMemo(() => {
-        if (typeof window === 'undefined') return false;
+        if (typeof window === 'undefined') return false; // Guard against SSR
         return isNewUser && sessionStorage.getItem(NEW_USER_HINTS_SHOWN_KEY) !== 'true';
     }, [isNewUser]);
 

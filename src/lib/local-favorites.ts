@@ -8,7 +8,7 @@ export const GUEST_MODE_KEY = 'goalstack_guest_mode_active';
 // This function now only handles starred favorites for guests.
 export const getLocalFavorites = (): Partial<Favorites> => {
     if (typeof window === 'undefined') {
-        return { teams: {}, leagues: {}, players: {}, crownedTeams: {} };
+        return { teams: {}, leagues: {}, players: {}, crownedTeams: {}, notificationsEnabled: { news: true } };
     }
     try {
         const localData = window.localStorage.getItem(LOCAL_FAVORITES_KEY);
@@ -29,7 +29,7 @@ export const getLocalFavorites = (): Partial<Favorites> => {
         };
     } catch (error) {
         console.error("Error reading local favorites:", error);
-        return { teams: {}, leagues: {}, players: {}, crownedTeams: {} };
+        return { teams: {}, leagues: {}, players: {}, crownedTeams: {}, notificationsEnabled: { news: true } };
     }
 };
 
@@ -69,4 +69,3 @@ export const clearLocalFavorites = () => {
     window.localStorage.removeItem(LOCAL_FAVORITES_KEY);
      window.dispatchEvent(new CustomEvent('localFavoritesChanged'));
 };
-
