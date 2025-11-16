@@ -7,34 +7,17 @@ import { GoogleIcon } from '@/components/icons/GoogleIcon';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { handleGoogleRedirectResult, initiateGoogleSignInRedirect } from '@/lib/firebase-client';
+import { handleNewUser, initiateGoogleSignInRedirect } from '@/lib/firebase-client';
+import { Capacitor } from '@capacitor/core';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
+import { getAuth, signInWithCredential, GoogleAuthProvider } from 'firebase/auth';
 
 export const GUEST_MODE_KEY = 'goalstack_guest_mode_active';
 
 export function WelcomeScreen() {
   const { toast } = useToast();
   const { db } = useFirestore();
-  const [isLoading, setIsLoading] = useState<false | 'google' | 'guest' | 'redirect'>(false);
-
-  useEffect(() => {
-    const handleRedirect = async () => {
-        if (!db) return;
-        setIsLoading('redirect');
-        try {
-            await handleGoogleRedirectResult(db);
-            // onAuthStateChanged will handle the UI update
-        } catch (error) {
-             console.error("Redirect handler failed", error);
-        } finally {
-            // Check if still mounted before setting state
-            if (document.readyState === 'complete') {
-              setIsLoading(false);
-            }
-        }
-    };
-    handleRedirect();
-  }, [db]);
-
+  const [isLoading, setIsLoading] = useState<false | 'google' | 'guest'>(false);
 
   const handleGoogleLogin = async () => {
     if (!db) {
@@ -42,7 +25,32 @@ export function WelcomeScreen() {
         return;
     }
     setIsLoading('google');
-    await initiateGoogleSignInRedirect();
+
+    try {
+      if (Capacitor.isNativePlatform()) {
+        // Native Mobile Flow
+        const result = await FirebaseAuthentication.signInWithGoogle();
+        const credential = GoogleAuthProvider.credential(result.credential?.idToken);
+        const auth = getAuth();
+        const userCredential = await signInWithCredential(auth, credential);
+        await handleNewUser(userCredential.user, db);
+      } else {
+        // Web Flow
+        await initiateGoogleSignInRedirect();
+      }
+    } catch (error: any) {
+        // Don't show toast for "closed" error, which happens when user cancels the native dialog
+        if (error.message && !error.message.includes('closed')) {
+            console.error("Google Sign-In Error", error);
+            toast({
+                variant: 'destructive',
+                title: 'فشل تسجيل الدخول',
+                description: 'حدث خطأ أثناء محاولة تسجيل الدخول باستخدام جوجل.',
+            });
+        }
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   const handleGuestLogin = () => {
@@ -59,16 +67,6 @@ export function WelcomeScreen() {
         });
         setIsLoading(false);
     }
-  }
-
-  if (isLoading === 'redirect') {
-    return (
-        <div className="flex flex-col items-center justify-center h-screen bg-background text-center">
-            <NabdAlMalaebLogo className="h-24 w-24 mb-4" />
-            <h1 className="text-2xl font-bold font-headline mb-8 text-primary">جاري تسجيل الدخول...</h1>
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-    );
   }
 
   return (

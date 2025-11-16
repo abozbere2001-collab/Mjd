@@ -84,20 +84,6 @@ export const initiateGoogleSignInRedirect = async () => {
     await signInWithRedirect(auth, provider);
 };
 
-export const handleGoogleRedirectResult = async (firestore: Firestore) => {
-    const auth = getAuth();
-    try {
-        const result = await getRedirectResult(auth);
-        if (result?.user) {
-            await handleNewUser(result.user, firestore);
-            return result.user;
-        }
-    } catch (error) {
-        console.error("Google Sign-In Redirect Error", error);
-    }
-    return null;
-};
-
 export const signOut = (): Promise<void> => {
     if (typeof window !== 'undefined' && localStorage.getItem(GUEST_MODE_KEY)) {
         localStorage.removeItem(GUEST_MODE_KEY);
