@@ -83,25 +83,18 @@ jobs:
       - name: Install Android Build Tools
         run: echo "y" | sdkmanager "build-tools;33.0.2"
 
-      - name: Build Release APK
-        run: cd android && ./gradlew assembleRelease
+      - name: Build Debug APK
+        run: cd android && ./gradlew assembleDebug
 
-      - name: Sign Release APK
-        id: sign_app
+      - name: Find and rename APK
+        id: find_apk
         run: |
-          echo "${{ secrets.ANDROID_SIGNING_KEY }}" | base64 --decode -w 0 > release.keystore
-          find android/app/build/outputs/apk/release -name "*.apk" | while read apk; do
-            $ANDROID_HOME/build-tools/33.0.2/apksigner sign \
-              --ks release.keystore \
-              --ks-key-alias "${{ secrets.ANDROID_ALIAS }}" \
-              --ks-pass pass:"${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
-              --key-pass pass:"${{ secrets.ANDROID_KEY_PASSWORD }}" \
-              "$apk"
-            echo "signedReleaseFile=$apk" >> $GITHUB_OUTPUT
+          find android/app/build/outputs/apk/debug -name "*.apk" | while read apk; do
+            echo "debugApkFile=$apk" >> $GITHUB_OUTPUT
           done
-        
-      - name: Upload Signed APK artifact
+
+      - name: Upload Debug APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: signed-android-apk
-          path: ${{ steps.sign_app.outputs.signedReleaseFile }}
+          name: debug-android-apk
+          path: ${{ steps.find_apk.outputs.debugApkFile }}
