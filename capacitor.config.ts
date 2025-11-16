@@ -8,7 +8,9 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https'
   },
-  plugins: {},
+  plugins: {
+    // GoogleAuth configuration is removed as the plugin is no longer used.
+  },
 };
 
 export default config;

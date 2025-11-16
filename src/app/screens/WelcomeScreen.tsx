@@ -1,24 +1,22 @@
 
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { NabdAlMalaebLogo } from '@/components/icons/NabdAlMalaebLogo';
 import { GoogleIcon } from '@/components/icons/GoogleIcon';
-import { getAuth, GoogleAuthProvider, signInWithCredential, signInWithPopup } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { handleNewUser } from '@/lib/firebase-client';
-import { Capacitor } from '@capacitor/core';
 
 export const GUEST_MODE_KEY = 'goalstack_guest_mode_active';
-
 
 export function WelcomeScreen() {
   const { toast } = useToast();
   const { db } = useFirestore();
   const [isLoading, setIsLoading] = useState<false | 'google' | 'guest'>(false);
-  
+
   const handleGoogleLogin = async () => {
     if (!db) return;
     localStorage.removeItem(GUEST_MODE_KEY);
@@ -26,15 +24,16 @@ export function WelcomeScreen() {
     const auth = getAuth();
     
     try {
-      // Fallback for web
+      // Use web-based popup for all environments.
+      // On Capacitor, this opens in a secure in-app browser that returns to the app.
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       await handleNewUser(result.user, db);
-      // onAuthStateChanged will handle the rest
+
     } catch (error: any) {
       console.error("Google Sign-In Error:", error);
-      // Don't show toast for user cancellation
-      if (error.message && !error.message.includes("cancelled")) {
+      // Don't show toast for user cancellation errors (popup closed)
+      if (error.code !== 'auth/popup-closed-by-user') {
           toast({
               variant: 'destructive',
               title: 'خطأ في تسجيل الدخول',
