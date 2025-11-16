@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -16,7 +15,6 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
-import { FixedSizeList as List } from 'react-window';
 import { hardcodedTranslations } from '@/lib/hardcoded-translations';
 
 const API_FOOTBALL_HOST = 'v3.football.api-sports.io';
@@ -174,22 +172,6 @@ export function SeasonTeamSelectionScreen({ navigate, goBack, canGoBack, headerA
         navigate('SeasonPlayerSelection', { leagueId, leagueName, teamId, teamName });
     };
 
-    const Row = ({ index, style }: { index: number; style: React.CSSProperties }) => {
-        const { team } = teams[index];
-        if (!team) return null;
-        return (
-            <div style={style} className="px-4 py-1">
-                <TeamListItem
-                    team={team}
-                    isPredictedChampion={stagedChampionId === team.id}
-                    onChampionSelect={() => handleStagingSelect(team.id)}
-                    onTeamClick={() => handleTeamClick(team.id, team.name)}
-                    disabled={hasPredictionBeenSaved && stagedChampionId !== team.id}
-                />
-            </div>
-        );
-    };
-    
     const showSaveButton = !hasPredictionBeenSaved && stagedChampionId !== undefined;
 
     if (loading) {
@@ -213,17 +195,21 @@ export function SeasonTeamSelectionScreen({ navigate, goBack, canGoBack, headerA
                 </p>
                 <p className="mt-2">ثم اضغط على أي فريق لاختيار الهداف من لاعبيه.</p>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto space-y-2 p-4">
                 {teams.length > 0 ? (
-                     <List
-                        height={500} // A fallback height
-                        itemCount={teams.length}
-                        itemSize={68}
-                        width="100%"
-                        className="w-full h-full"
-                    >
-                        {Row}
-                    </List>
+                     teams.map(({team}) => {
+                        if (!team) return null;
+                        return(
+                            <TeamListItem
+                                key={team.id}
+                                team={team}
+                                isPredictedChampion={stagedChampionId === team.id}
+                                onChampionSelect={() => handleStagingSelect(team.id)}
+                                onTeamClick={() => handleTeamClick(team.id, team.name)}
+                                disabled={hasPredictionBeenSaved && stagedChampionId !== team.id}
+                            />
+                        )
+                    })
                 ) : (
                     <p className="text-center pt-8 text-muted-foreground">لا توجد فرق متاحة لهذا الدوري.</p>
                 )}
@@ -239,4 +225,3 @@ export function SeasonTeamSelectionScreen({ navigate, goBack, canGoBack, headerA
         </div>
     );
 }
-

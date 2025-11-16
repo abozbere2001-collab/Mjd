@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
@@ -441,7 +440,11 @@ export function TeamDetailScreen({ navigate, goBack, canGoBack, teamId, leagueId
     const [activeTab, setActiveTab] = useState('details');
 
     useEffect(() => {
-        if (!teamId) return;
+        if (!teamId) {
+            setLoading(false);
+            setError("Team ID is missing.");
+            return;
+        };
         let isMounted = true;
         let predictionsUnsub: (() => void) | null = null;
 
@@ -456,8 +459,7 @@ export function TeamDetailScreen({ navigate, goBack, canGoBack, teamId, leagueId
                     },
                 });
                 if (!teamRes.ok) {
-                    if (teamRes.status === 404) throw new Error("Team not found in API response");
-                    throw new Error("Team API fetch failed");
+                    throw new Error(`Team API fetch failed with status ${teamRes.status}`);
                 }
                 
                 const data = await teamRes.json();
@@ -632,4 +634,3 @@ export function TeamDetailScreen({ navigate, goBack, canGoBack, teamId, leagueId
         </div>
     );
 }
-
