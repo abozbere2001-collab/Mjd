@@ -7,14 +7,9 @@ const config: CapacitorConfig = {
   webDir: 'out',
   server: {
     androidScheme: 'https',
-    hostname: 'app.nabd.malaeb'
+    hostname: 'localhost'
   },
-  plugins: {
-    FirebaseAuthentication: {
-      skipNativeAuth: false,
-      providers: ["google.com"],
-    },
-  },
+  plugins: {},
 };
 
 export default config;

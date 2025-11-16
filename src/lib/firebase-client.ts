@@ -28,20 +28,24 @@ export const handleNewUser = async (user: User, firestore: Firestore) => {
         const userDoc = await getDoc(userRef);
 
         if (userDoc.exists()) {
+            // User already exists, merge local favorites if any
             if (hasLocalFavorites) {
                 await setDoc(favoritesRef, localFavorites, { merge: true });
                 clearLocalFavorites();
             }
+             // Also update their profile info in case it changed in Google
             await firestoreUpdateDoc(userRef, {
                 displayName: user.displayName,
                 photoURL: user.photoURL,
             });
 
-            return; 
+            return; // Exit if user exists
         }
 
+        // --- This is a new user ---
         const batch = writeBatch(firestore);
 
+        // 1. Create User Profile
         const displayName = user.displayName || `مستخدم_${user.uid.substring(0, 5)}`;
         const photoURL = user.photoURL || '';
         const userProfileData: UserProfile = {
@@ -49,17 +53,22 @@ export const handleNewUser = async (user: User, firestore: Firestore) => {
             email: user.email || 'N/A',
             photoURL: photoURL,
             isProUser: false,
+            // If they had local favorites, they completed the first step of onboarding
             onboardingComplete: hasLocalFavorites,
         };
         batch.set(userRef, userProfileData);
 
+        // 2. Create Favorites Document
         const favoritesData: Partial<Favorites> = { userId: user.uid };
         if (hasLocalFavorites) {
             Object.assign(favoritesData, localFavorites);
         }
         batch.set(favoritesRef, favoritesData);
+        
+        // Commit all writes at once
         await batch.commit();
 
+        // Clear local data after successful migration
         if (hasLocalFavorites) {
             clearLocalFavorites();
         }
@@ -84,6 +93,21 @@ export const initiateGoogleSignInRedirect = async () => {
     await signInWithRedirect(auth, provider);
 };
 
+export const handleGoogleRedirectResult = async (firestore: Firestore) => {
+    try {
+        const auth = getAuth();
+        const result = await getRedirectResult(auth);
+        if (result && result.user) {
+            await handleNewUser(result.user, firestore);
+            return result.user;
+        }
+    } catch (error) {
+        console.error("Error during Google sign-in redirect:", error);
+    }
+    return null;
+};
+
+
 export const signOut = (): Promise<void> => {
     if (typeof window !== 'undefined' && localStorage.getItem(GUEST_MODE_KEY)) {
         localStorage.removeItem(GUEST_MODE_KEY);
@@ -102,8 +126,10 @@ export const updateUserDisplayName = async (user: User, newDisplayName: string, 
         throw new Error("Database service is not available.");
     }
 
+    // Update Firebase Auth profile
     await updateProfile(user, { displayName: newDisplayName });
 
+    // Update Firestore user document
     const userRef = doc(db, 'users', user.uid);
     
     const userProfileUpdateData = { displayName: newDisplayName };
@@ -115,5 +141,7 @@ export const updateUserDisplayName = async (user: User, newDisplayName: string, 
                 requestResourceData: userProfileUpdateData,
             });
             errorEmitter.emit('permission-error', permissionError);
+            // We don't re-throw here, as the auth profile update already succeeded.
+            // The global error handler will catch this for development.
         });
 };

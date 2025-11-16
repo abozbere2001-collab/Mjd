@@ -7,17 +7,37 @@ import { GoogleIcon } from '@/components/icons/GoogleIcon';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { handleNewUser, initiateGoogleSignInRedirect } from '@/lib/firebase-client';
-import { Capacitor } from '@capacitor/core';
-import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
-import { getAuth, signInWithCredential, GoogleAuthProvider } from 'firebase/auth';
+import { initiateGoogleSignInRedirect, handleGoogleRedirectResult } from '@/lib/firebase-client';
 
 export const GUEST_MODE_KEY = 'goalstack_guest_mode_active';
 
 export function WelcomeScreen() {
   const { toast } = useToast();
   const { db } = useFirestore();
-  const [isLoading, setIsLoading] = useState<false | 'google' | 'guest'>(false);
+  const [isLoading, setIsLoading] = useState<'google' | 'guest' | 'redirect' | false>(false);
+
+  useEffect(() => {
+    const handleRedirect = async () => {
+      if (!db) return;
+      setIsLoading('redirect');
+      try {
+        await handleGoogleRedirectResult(db);
+        // On successful sign-in, the onAuthStateChanged listener in the provider
+        // will automatically handle the UI update, so we don't need to do anything here.
+      } catch (error) {
+        console.error("Redirect handler error", error);
+        toast({
+          variant: 'destructive',
+          title: 'فشل تسجيل الدخول',
+          description: 'حدث خطأ أثناء معالجة نتيجة تسجيل الدخول.',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    handleRedirect();
+  }, [db, toast]);
+
 
   const handleGoogleLogin = async () => {
     if (!db) {
@@ -25,32 +45,7 @@ export function WelcomeScreen() {
         return;
     }
     setIsLoading('google');
-
-    try {
-      if (Capacitor.isNativePlatform()) {
-        // Native Mobile Flow
-        const result = await FirebaseAuthentication.signInWithGoogle();
-        const credential = GoogleAuthProvider.credential(result.credential?.idToken);
-        const auth = getAuth();
-        const userCredential = await signInWithCredential(auth, credential);
-        await handleNewUser(userCredential.user, db);
-      } else {
-        // Web Flow
-        await initiateGoogleSignInRedirect();
-      }
-    } catch (error: any) {
-        // Don't show toast for "closed" error, which happens when user cancels the native dialog
-        if (error.message && !error.message.includes('closed')) {
-            console.error("Google Sign-In Error", error);
-            toast({
-                variant: 'destructive',
-                title: 'فشل تسجيل الدخول',
-                description: 'حدث خطأ أثناء محاولة تسجيل الدخول باستخدام جوجل.',
-            });
-        }
-    } finally {
-        setIsLoading(false);
-    }
+    await initiateGoogleSignInRedirect();
   };
 
   const handleGuestLogin = () => {
@@ -67,6 +62,17 @@ export function WelcomeScreen() {
         });
         setIsLoading(false);
     }
+  }
+
+  // If the page is loading from a redirect, show a full-screen loader.
+  if (isLoading === 'redirect') {
+    return (
+       <div className="flex flex-col items-center justify-center h-screen bg-background text-center">
+            <NabdAlMalaebLogo className="h-24 w-24 mb-4" />
+            <h1 className="text-2xl font-bold font-headline mb-8 text-primary">جارٍ تسجيل الدخول...</h1>
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    )
   }
 
   return (
