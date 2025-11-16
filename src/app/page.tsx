@@ -159,6 +159,7 @@ export default function Home() {
     const [isCheckingGuest, setIsCheckingGuest] = useState(true);
 
     useEffect(() => {
+        // This effect runs only on the client, preventing hydration errors.
         if (typeof window !== 'undefined') {
             const guestMode = localStorage.getItem(GUEST_MODE_KEY) === 'true';
             setIsGuest(guestMode);
