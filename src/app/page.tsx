@@ -120,15 +120,13 @@ const OnboardingFlow = ({ user, isGuest }: { user: User | null, isGuest: boolean
         }
     }
     
-    const onHintsDismissed = () => {
-        if(typeof window !== 'undefined'){
-            sessionStorage.setItem(NEW_USER_HINTS_SHOWN_KEY, 'true');
-        }
-    }
+    const onHintsDismissed = useCallback(() => {
+        sessionStorage.setItem(NEW_USER_HINTS_SHOWN_KEY, 'true');
+    }, []);
     
     const showHints = useMemo(() => {
         if (typeof window === 'undefined') return false;
-        return isNewUser && !sessionStorage.getItem(NEW_USER_HINTS_SHOWN_KEY);
+        return isNewUser && sessionStorage.getItem(NEW_USER_HINTS_SHOWN_KEY) !== 'true';
     }, [isNewUser]);
 
     if (isLoading) {
@@ -160,10 +158,8 @@ export default function Home() {
 
     useEffect(() => {
         // This effect runs only on the client, preventing hydration errors.
-        if (typeof window !== 'undefined') {
-            const guestMode = localStorage.getItem(GUEST_MODE_KEY) === 'true';
-            setIsGuest(guestMode);
-        }
+        const guestMode = localStorage.getItem(GUEST_MODE_KEY) === 'true';
+        setIsGuest(guestMode);
         setIsCheckingGuest(false);
     }, []);
     

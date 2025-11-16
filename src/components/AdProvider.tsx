@@ -27,13 +27,13 @@ export const AdProvider = ({ children }: { children: React.ReactNode }) => {
   const { isProUser } = useAuth();
   const { isAdmin } = useAdmin();
   const [shouldShowSplash, setShouldShowSplash] = useState(false);
-  const [bannerAdDismissed, setBannerAdDismissed] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    return sessionStorage.getItem(BANNER_AD_DISMISSED_KEY) === 'true';
-  });
+  const [bannerAdDismissed, setBannerAdDismissed] = useState(true); // Default to true until client checks
 
   useEffect(() => {
-    if (isProUser || isAdmin || typeof window === 'undefined') {
+    // This effect runs only on the client, making it safe to access storage.
+    setBannerAdDismissed(sessionStorage.getItem(BANNER_AD_DISMISSED_KEY) === 'true');
+
+    if (isProUser || isAdmin) {
       setShouldShowSplash(false);
       return;
     }
@@ -66,18 +66,14 @@ export const AdProvider = ({ children }: { children: React.ReactNode }) => {
   }, [isProUser, isAdmin]);
 
   const setSplashAdShown = () => {
-    if (typeof window !== 'undefined') {
-        // Mark that the ad has been shown for this session
-        sessionStorage.setItem(SPLASH_AD_SHOWN_SESSION_KEY, 'true');
-    }
+    // Mark that the ad has been shown for this session
+    sessionStorage.setItem(SPLASH_AD_SHOWN_SESSION_KEY, 'true');
     setShouldShowSplash(false);
   }
 
   const dismissBannerAd = () => {
     setBannerAdDismissed(true);
-     if (typeof window !== 'undefined') {
-        sessionStorage.setItem(BANNER_AD_DISMISSED_KEY, 'true');
-     }
+    sessionStorage.setItem(BANNER_AD_DISMISSED_KEY, 'true');
   }
 
   const showSplashAd = !isProUser && !isAdmin && shouldShowSplash;
@@ -160,5 +156,3 @@ export const BannerAd = () => {
         </div>
     )
 }
-
-    
