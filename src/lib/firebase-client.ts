@@ -31,6 +31,12 @@ export const handleNewUser = async (user: User, firestore: Firestore) => {
                 await setDoc(favoritesRef, localFavorites, { merge: true });
                 clearLocalFavorites();
             }
+             // Also update display name and photo in case they changed it in their Google account
+            await firestoreUpdateDoc(userRef, {
+                displayName: user.displayName,
+                photoURL: user.photoURL,
+            });
+
             return; // Existing user flow ends here
         }
 

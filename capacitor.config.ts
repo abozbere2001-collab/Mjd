@@ -6,7 +6,8 @@ const config: CapacitorConfig = {
   appName: 'نبض الملاعب',
   webDir: 'out',
   server: {
-    androidScheme: 'https'
+    androidScheme: 'https',
+    hostname: 'app.nabd.malaeb'
   },
   plugins: {
     // GoogleAuth configuration is removed as the plugin is no longer used.
