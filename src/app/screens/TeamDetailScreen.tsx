@@ -468,7 +468,8 @@ export function TeamDetailScreen({ navigate, goBack, canGoBack, teamId, leagueId
                         const teamInfo = data.response[0];
                         setTeamData(teamInfo);
                     } else {
-                         throw new Error("Team not found in API response");
+                         // Don't throw an error, just set the error state
+                         setError("Team not found in API response.");
                     }
                 }
             } catch (err: any) {
@@ -634,3 +635,4 @@ export function TeamDetailScreen({ navigate, goBack, canGoBack, teamId, leagueId
         </div>
     );
 }
+
