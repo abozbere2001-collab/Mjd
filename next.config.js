@@ -12,9 +12,13 @@ const {
   NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 } = process.env;
 
+const isGithubActions = process.env.GITHUB_ACTIONS === 'true';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
+  // Add assetPrefix for GitHub Pages
+  assetPrefix: isGithubActions ? '/Mjd/' : undefined,
   typescript: {
     ignoreBuildErrors: true,
   },
