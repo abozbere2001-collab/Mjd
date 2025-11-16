@@ -9,9 +9,6 @@ const config: CapacitorConfig = {
     androidScheme: 'https',
     hostname: 'app.nabd.malaeb'
   },
-  plugins: {
-    // GoogleAuth configuration is removed as the plugin is no longer used.
-  },
 };
 
 export default config;

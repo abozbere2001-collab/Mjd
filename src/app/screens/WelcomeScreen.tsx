@@ -4,11 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { NabdAlMalaebLogo } from '@/components/icons/NabdAlMalaebLogo';
 import { GoogleIcon } from '@/components/icons/GoogleIcon';
-import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "firebase/auth";
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { handleNewUser, processRedirectResult } from '@/lib/firebase-client';
+import { handleGoogleRedirectResult, initiateGoogleSignInRedirect } from '@/lib/firebase-client';
 
 export const GUEST_MODE_KEY = 'goalstack_guest_mode_active';
 
@@ -17,34 +16,33 @@ export function WelcomeScreen() {
   const { db } = useFirestore();
   const [isLoading, setIsLoading] = useState<false | 'google' | 'guest' | 'redirect'>(false);
 
-  // Check for redirect result on component mount
   useEffect(() => {
-    if (!db) return;
-    setIsLoading('redirect');
-    processRedirectResult(db)
-      .catch((error) => {
-        console.error("Login redirect error", error);
-        toast({
-          variant: 'destructive',
-          title: 'خطأ في تسجيل الدخول',
-          description: 'حدث خطأ أثناء إتمام عملية تسجيل الدخول.',
-        });
-      })
-      .finally(() => {
-        // Only stop loading if it was in the redirect state.
-        // This prevents flicker if the user arrives directly.
-        setIsLoading(current => (current === 'redirect' ? false : current));
-      });
-  }, [db, toast]);
+    const handleRedirect = async () => {
+        if (!db) return;
+        setIsLoading('redirect');
+        try {
+            await handleGoogleRedirectResult(db);
+            // onAuthStateChanged will handle the UI update
+        } catch (error) {
+             console.error("Redirect handler failed", error);
+        } finally {
+            // Check if still mounted before setting state
+            if (document.readyState === 'complete') {
+              setIsLoading(false);
+            }
+        }
+    };
+    handleRedirect();
+  }, [db]);
+
 
   const handleGoogleLogin = async () => {
-    localStorage.removeItem(GUEST_MODE_KEY);
+    if (!db) {
+        toast({ variant: 'destructive', title: 'خطأ', description: 'خدمة قاعدة البيانات غير متاحة.' });
+        return;
+    }
     setIsLoading('google');
-    const auth = getAuth();
-    const provider = new GoogleAuthProvider();
-    // Use signInWithRedirect for a mobile-friendly flow
-    await signInWithRedirect(auth, provider);
-    // The browser will redirect. The useEffect will handle the result when the app reloads.
+    await initiateGoogleSignInRedirect();
   };
 
   const handleGuestLogin = () => {
@@ -63,13 +61,13 @@ export function WelcomeScreen() {
     }
   }
 
-  // Show a loading indicator if processing a redirect
   if (isLoading === 'redirect') {
     return (
-      <div className="flex h-full flex-col items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <p className="mt-4 text-muted-foreground">جاري إتمام تسجيل الدخول...</p>
-      </div>
+        <div className="flex flex-col items-center justify-center h-screen bg-background text-center">
+            <NabdAlMalaebLogo className="h-24 w-24 mb-4" />
+            <h1 className="text-2xl font-bold font-headline mb-8 text-primary">جاري تسجيل الدخول...</h1>
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
     );
   }
 
