@@ -1,48 +1,50 @@
 
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { NabdAlMalaebLogo } from '@/components/icons/NabdAlMalaebLogo';
 import { GoogleIcon } from '@/components/icons/GoogleIcon';
-import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "firebase/auth";
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { handleNewUser } from '@/lib/firebase-client';
+import { handleNewUser, processRedirectResult } from '@/lib/firebase-client';
 
 export const GUEST_MODE_KEY = 'goalstack_guest_mode_active';
 
 export function WelcomeScreen() {
   const { toast } = useToast();
   const { db } = useFirestore();
-  const [isLoading, setIsLoading] = useState<false | 'google' | 'guest'>(false);
+  const [isLoading, setIsLoading] = useState<false | 'google' | 'guest' | 'redirect'>(false);
+
+  // Check for redirect result on component mount
+  useEffect(() => {
+    if (!db) return;
+    setIsLoading('redirect');
+    processRedirectResult(db)
+      .catch((error) => {
+        console.error("Login redirect error", error);
+        toast({
+          variant: 'destructive',
+          title: 'خطأ في تسجيل الدخول',
+          description: 'حدث خطأ أثناء إتمام عملية تسجيل الدخول.',
+        });
+      })
+      .finally(() => {
+        // Only stop loading if it was in the redirect state.
+        // This prevents flicker if the user arrives directly.
+        setIsLoading(current => (current === 'redirect' ? false : current));
+      });
+  }, [db, toast]);
 
   const handleGoogleLogin = async () => {
-    if (!db) return;
     localStorage.removeItem(GUEST_MODE_KEY);
     setIsLoading('google');
     const auth = getAuth();
-    
-    try {
-      // Use web-based popup for all environments.
-      // On Capacitor, this opens in a secure in-app browser that returns to the app.
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      await handleNewUser(result.user, db);
-
-    } catch (error: any) {
-      console.error("Google Sign-In Error:", error);
-      // Don't show toast for user cancellation errors (popup closed)
-      if (error.code !== 'auth/popup-closed-by-user') {
-          toast({
-              variant: 'destructive',
-              title: 'خطأ في تسجيل الدخول',
-              description: 'حدث خطأ أثناء محاولة تسجيل الدخول باستخدام جوجل.',
-          });
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    const provider = new GoogleAuthProvider();
+    // Use signInWithRedirect for a mobile-friendly flow
+    await signInWithRedirect(auth, provider);
+    // The browser will redirect. The useEffect will handle the result when the app reloads.
   };
 
   const handleGuestLogin = () => {
@@ -57,9 +59,18 @@ export function WelcomeScreen() {
             title: 'خطأ',
             description: 'فشل تفعيل وضع الزائر. يرجى المحاولة مرة أخرى.',
         });
-    } finally {
         setIsLoading(false);
     }
+  }
+
+  // Show a loading indicator if processing a redirect
+  if (isLoading === 'redirect') {
+    return (
+      <div className="flex h-full flex-col items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <p className="mt-4 text-muted-foreground">جاري إتمام تسجيل الدخول...</p>
+      </div>
+    );
   }
 
   return (

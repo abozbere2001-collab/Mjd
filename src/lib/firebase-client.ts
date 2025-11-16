@@ -6,6 +6,7 @@ import {
   updateProfile,
   type User, 
   getAuth,
+  getRedirectResult,
 } from "firebase/auth";
 import { doc, setDoc, getDoc, Firestore, writeBatch, serverTimestamp, updateDoc as firestoreUpdateDoc } from 'firebase/firestore';
 import type { UserProfile, UserScore, Favorites } from './types';
@@ -112,4 +113,20 @@ export const updateUserDisplayName = async (user: User, newDisplayName: string, 
             });
             errorEmitter.emit('permission-error', permissionError);
         });
+};
+
+
+export const processRedirectResult = async (firestore: Firestore) => {
+    try {
+        const auth = getAuth();
+        const result = await getRedirectResult(auth);
+        if (result) {
+            // This is the signed-in user
+            const user = result.user;
+            // Now, run the logic to create their document in Firestore if they are new
+            await handleNewUser(user, firestore);
+        }
+    } catch (error) {
+        console.error("Error processing redirect result:", error);
+    }
 };
