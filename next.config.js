@@ -7,6 +7,9 @@ const isGithubActions = process.env.GITHUB_ACTIONS === 'true';
 const basePath = isGithubActions ? '/Mjd' : '';
 
 const nextConfig = {
+  // Add a trailing slash to all paths. This helps with asset paths in static exports.
+  trailingSlash: true,
+  
   // Base path for routing within the app.
   basePath: basePath,
   // Asset prefix for loading resources like JS, CSS, images.
