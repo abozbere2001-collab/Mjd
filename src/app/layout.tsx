@@ -11,7 +11,7 @@ import { ClientLayout } from './client-layout';
 export const metadata: Metadata = {
   title: 'نبض الملاعب',
   description: 'عالم كرة القدم بين يديك',
-  manifest: '/manifest.json',
+  manifest: '/Mjd/manifest.json',
 };
 
 const cairo = Cairo({
