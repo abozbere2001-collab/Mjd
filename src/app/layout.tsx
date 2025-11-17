@@ -32,6 +32,20 @@ export default function RootLayout({
 
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
+        <head>
+          <meta name="theme-color" content="#29ABE2" />
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                if ('serviceWorker' in navigator) {
+                  navigator.serviceWorker.register('/service-worker.js')
+                    .then(() => console.log("Service Worker Registered"))
+                    .catch(err => console.log("SW Error:", err));
+                }
+              `,
+            }}
+          />
+        </head>
         <body className={`${cairo.variable} font-body antialiased`}>
             <ThemeProvider
                 attribute="class"
