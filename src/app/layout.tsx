@@ -16,7 +16,7 @@ const cairo = Cairo({
 export const metadata: Metadata = {
   title: 'نبض الملاعب',
   description: 'عالم كرة القدم بين يديك',
-  manifest: "/manifest.json",
+  manifest: "/Mjd/manifest.json",
   icons: {
     apple: "/icons/icon-192x192.png",
     icon: "/icons/icon-192x192.png",
