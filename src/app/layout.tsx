@@ -16,7 +16,7 @@ const cairo = Cairo({
 export const metadata: Metadata = {
   title: 'نبض الملاعب',
   description: 'عالم كرة القدم بين يديك',
-  manifest: "/manifest.json",
+  manifest: "/Mjd/manifest.json",
   icons: {
     apple: "/icons/icon-192x192.png",
     icon: "/icons/icon-192x192.png",
@@ -33,13 +33,12 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
         <head>
-          <link rel="manifest" href="manifest.json" />
           <meta name="theme-color" content="#29ABE2" />
           <script
             dangerouslySetInnerHTML={{
               __html: `
                 if ('serviceWorker' in navigator) {
-                  navigator.serviceWorker.register('service-worker.js')
+                  navigator.serviceWorker.register('/Mjd/service-worker.js')
                     .then(() => console.log("Service Worker Registered"))
                     .catch(err => console.log("SW Error:", err));
                 }
