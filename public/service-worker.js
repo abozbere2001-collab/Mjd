@@ -1,7 +1,6 @@
-
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open('app-cache-v1').then((cache) => {
+    caches.open('app-cache').then((cache) => {
       return cache.addAll([
         '/',
         '/manifest.json',
