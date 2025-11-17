@@ -17,6 +17,9 @@ const isGithubActions = process.env.GITHUB_ACTIONS === 'true';
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
+  images: {
+    unoptimized: true,
+  },
   // Add assetPrefix for GitHub Pages
   assetPrefix: isGithubActions ? '/Mjd/' : undefined,
   typescript: {
@@ -24,35 +27,6 @@ const nextConfig = {
   },
   eslint: {
     ignoreDuringBuilds: true,
-  },
-  images: {
-    unoptimized: true,
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'placehold.co',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'picsum.photos',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'media.api-sports.io',
-        port: '',
-        pathname: '/**',
-      },
-    ],
   },
   env: {
     NEXT_PUBLIC_API_FOOTBALL_KEY,
