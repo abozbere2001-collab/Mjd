@@ -1,9 +1,7 @@
-
 "use client";
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { NabdAlMalaebLogo } from './icons/NabdAlMalaebLogo';
 
 interface ScreenHeaderProps {
   title: string;
@@ -29,7 +27,6 @@ export function ScreenHeader({ title, canGoBack, onBack, actions, secondaryActio
         "bg-card text-card-foreground rounded-b-lg mb-1 mx-1 shadow-md border-x border-b"
     )}>
       <div className="flex items-center gap-1">
-         <NabdAlMalaebLogo className="h-6 mr-1 ml-1" />
          {canGoBack && (
             <Button
             variant="ghost"

@@ -1,20 +1,22 @@
 {
   "short_name": "نبض الملاعب",
-  "name": "نبض الملاعب - عالم كرة القدم بين يديك",
+  "name": "نبض الملاعب: عالم كرة القدم",
+  "description": "تطبيق شامل لمتابعة نتائج المباريات وأخبار كرة القدم.",
   "icons": [
     {
-      "src": "icons/icon-192x192.png",
+      "src": "/icons/icon-192x192.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "icons/icon-512x512.png",
+      "src": "/icons/icon-512x512.png",
       "type": "image/png",
       "sizes": "512x512"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
+  "background_color": "#ffffff",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "scope": "/",
+  "theme_color": "#000000"
 }

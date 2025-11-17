@@ -7,16 +7,17 @@ import { Cairo } from 'next/font/google';
 import React from 'react';
 import { ClientLayout } from './client-layout';
 
-export const metadata: Metadata = {
-  title: 'نبض الملاعب',
-  description: 'عالم كرة القدم بين يديك',
-};
-
 const cairo = Cairo({
   subsets: ['arabic'],
   weight: ['400', '700'],
   variable: '--font-cairo',
 });
+
+export const metadata: Metadata = {
+  title: 'نبض الملاعب',
+  description: 'عالم كرة القدم بين يديك',
+  manifest: "/manifest.json",
+};
 
 
 export default function RootLayout({
