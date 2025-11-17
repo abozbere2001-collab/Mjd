@@ -28,6 +28,9 @@ jobs:
 
       - name: Build project for web
         run: npm run build
+
+      - name: Add .nojekyll file
+        run: touch ./out/.nojekyll
         
       - name: Upload artifact for web deployment
         uses: actions/upload-pages-artifact@v4
