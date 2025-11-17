@@ -1,3 +1,4 @@
+
 name: Build, Package and Deploy
 
 on:
@@ -30,12 +31,12 @@ jobs:
         run: npm run build
 
       - name: Add .nojekyll file
-        run: touch ./out/.nojekyll
+        run: touch ./Mjd/.nojekyll
         
       - name: Upload artifact for web deployment
         uses: actions/upload-pages-artifact@v4
         with:
-          path: ./out
+          path: ./Mjd
 
   deploy-web:
     environment:
