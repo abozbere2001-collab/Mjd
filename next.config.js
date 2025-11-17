@@ -1,20 +1,17 @@
 
 /** @type {import('next').NextConfig} */
 
-// Determine the base path based on the environment.
-// This is crucial for deploying to a subdirectory on GitHub Pages.
-const isGithubActions = process.env.GITHUB_ACTIONS === 'true';
-
+// This simplified configuration is optimized for both static export (for Capacitor)
+// and deployment to GitHub Pages. The key is removing basePath and assetPrefix,
+// and relying on relative paths and the .nojekyll file in the deployment workflow.
 const nextConfig = {
-  // Add a trailing slash to all paths. This helps with asset paths in static exports.
+  // A trailing slash ensures that paths are resolved correctly for index.html files.
   trailingSlash: true,
-  
-  // Base path and asset prefix are removed to simplify paths for Capacitor and rely on .nojekyll for GitHub Pages.
-  
-  // Export the app as static HTML, which can be deployed anywhere. Required for Capacitor.
+
+  // Export the app as static HTML, required for Capacitor.
   output: 'export',
 
-  // Disable image optimization, as it's not compatible with static export.
+  // Image optimization is disabled as it's not compatible with static export.
   images: {
     unoptimized: true,
   },
