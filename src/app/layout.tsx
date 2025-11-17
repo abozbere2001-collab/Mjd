@@ -7,7 +7,8 @@ import { Cairo } from 'next/font/google';
 import React from 'react';
 import { ClientLayout } from './client-layout';
 
-
+// The manifest path should be absolute from the root of the domain.
+// The `assetPrefix` in next.config.js will handle adding the repository name for GitHub Pages.
 export const metadata: Metadata = {
   title: 'نبض الملاعب',
   description: 'عالم كرة القدم بين يديك',
